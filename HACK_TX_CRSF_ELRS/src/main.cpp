@@ -375,7 +375,7 @@ void showSplashScreen() {
   lcd.print("HACK_RC_TX ELRS");
   //SerialUSB.println("HACK_TX debug");
   lcd.setCursor(0, 1);
-  lcd.print("BY ARTUR KUC");
+  lcd.print("BY rutrA");
   delay(2000);
   //lcd.noBacklight();
   lcd.clear();
