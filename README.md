@@ -1,2 +1,2 @@
 # STM32-ELRS-Handset
-code for DIY Handset with ELRS or NRF24-based RC Link
+Code for DIY Handset with ELRS or NRF24-based RC Link. HACK_TX is current workname of this project
