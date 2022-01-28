@@ -1,5 +1,5 @@
 
- //Team900
+ //Team900 - documentation made by cooldan from ELRS discord
         // buildElrsPacket(crsfCmdPacket,X, 3);
         // 0 : ELRS status request => ??
         // 1 : Set Lua [Packet Rate]= 0 - 25Hz / 1 - 50Hz / 2 - 100Hz / 3 - 200Hz
