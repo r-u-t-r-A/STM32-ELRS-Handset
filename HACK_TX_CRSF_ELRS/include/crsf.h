@@ -1,5 +1,5 @@
 
- //Team900 - documentation made by cooldan from ELRS discord
+ //Team900
         // buildElrsPacket(crsfCmdPacket,X, 3);
         // 0 : ELRS status request => ??
         // 1 : Set Lua [Packet Rate]= 0 - 25Hz / 1 - 50Hz / 2 - 100Hz / 3 - 200Hz
@@ -10,15 +10,15 @@
         // 6 : Set Lua [Max Power]=0 - 10mW / 1 - 25mW *dont force to change, but change after reboot if last power was greater
         // 7 : Set Lua [Dynamic]=0 -> Off;On;AUX9;AUX10;AUX11;AUX12 -> * @ ttgo screen
         // 8 : Set Lua [VTX Administrator]=0
-        // 9 : Set Lua [Band]=0 -> Off;A;B;E;F;R;L
-        // 10: Set Lua [Channel]=0 -> 1;2;3;4;5;6;7;8
-        // 11: Set Lua [Pwr Lvl]=0 -> -;1;2;3;4;5;6;7;8
-        // 12: Set Lua [Pitmode]=0 -> Off;On
-        // 13: Set Lua [Send VTx]=0 sending response for [Send VTx] chunk=0 step=2
-        // 14: Set Lua [WiFi Connectivity]=0
-        // 15: Set Lua [Enable WiFi]=0 sending response for [Enable WiFi] chunk=0 step=0
-        // 16: Set Lua [Enable Rx WiFi]=0 sending response for [Enable Rx WiFi] chunk=0 step=2
-        // 17: Set Lua [BLE Joystick]=0 sending response for [BLE Joystick] chunk=0 step=0
+        // 9 : Set Lua [Pitmode]=0 -> Off;On 
+        // 10 : Set Lua [Band]=0 -> Off;A;B;E;F;R;L
+        // 11:  Set Lua [Channel]=0 -> 1;2;3;4;5;6;7;8
+        // 12 : Set Lua [Pwr Lvl]=0 -> -;1;2;3;4;5;6;7;8
+        // 13 : Set Lua [Send VTx]=0 sending response for [Send VTx] chunk=0 step=2
+        // 14 : Set Lua [WiFi Connectivity]=0
+        // 15 : Set Lua [Enable WiFi]=0 sending response for [Enable WiFi] chunk=0 step=0
+        // 16 : Set Lua [Enable Rx WiFi]=0 sending response for [Enable Rx WiFi] chunk=0 step=2
+        // 17 : Set Lua [BLE Joystick]=0 sending response for [BLE Joystick] chunk=0 step=0
         //     Set Lua [BLE Joystick]=1 sending response for [BLE Joystick] chunk=0 step=3
         //     Set Lua [BLE Joystick]=2 sending response for [BLE Joystick] chunk=0 step=3
         // 19: Set Lua [Bad/Good]=0

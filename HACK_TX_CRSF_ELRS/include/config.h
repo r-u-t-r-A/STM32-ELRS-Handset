@@ -62,30 +62,14 @@ typedef enum {
   BACK, NEXT, PREV, OK, NONE
 } ENUM_BUTTON;
 
-STRUCT_MENUPOS menu[11];
+STRUCT_MENUPOS menu[16];
 
 int currentMenuPos = 0;
 int menuSize;
 bool isInLowerLevel = false;
 int tempVal;
 
-static uint8_t currentPower[8] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};//  list =  {'10 mW', '25 mW', '50 mW', '100 mW', '250 mW', '500 mW', '1000 mW', '2000 mW'},
-  //                                            0        1         2        3        4   
-static uint8_t currentPktRate[4] = {0x06, 0x05, 0x04, 0x02}; //  '25Hz(-123dbm)', '50Hz(-120dbm)', '100Hz(-117dbm)', '200Hz(-112dbm)'
-  //                                           0              1               3                 5      
-
-#define SBUS_MIN_OFFSET 173
-#define SBUS_MID_OFFSET 992
-#define SBUS_MAX_OFFSET 1811
-#define SBUS_CHANNEL_NUMBER 16
-#define SBUS_PACKET_LENGTH 25
-#define SBUS_FRAME_HEADER 0x0f
-#define SBUS_FRAME_FOOTER 0x00
-#define SBUS_FRAME_FOOTER_V2 0x04
-#define SBUS_STATE_FAILSAFE 0x08
-#define SBUS_STATE_SIGNALLOSS 0x04
-#define SBUS_UPDATE_RATE 15 //ms
-
-#define SBUS
-
+uint8_t vtx_power;
+uint8_t vtx_channel;
+uint8_t vtx_band;
 
