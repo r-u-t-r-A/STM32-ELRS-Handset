@@ -1,9 +1,4 @@
 //Inputs outputs
-#define battery_in PB0                  //pin for analog in from the battery divider
-#define buttons_analog_in PB1           //Analog in from all the push buttons
-#define ELRS_Serial Serial1
-#define CRSF_baudrate 115200
-#define Module_power PB12
 
 bool ELRS_RF = false;
 
@@ -25,6 +20,7 @@ int roll = 512;
 int pitch = 512;
 
 bool lcd_en = true;
+bool command_to_send = false;
 
 // The sizeof this struct should not exceed 32 bytes
 struct TX_data {
@@ -43,12 +39,7 @@ struct TX_data {
 //Create a variable with the structure above and name it tx
 TX_data tx;
 
-uint32_t crsfTime = 0;
-
-#define BTN_BACK  PB13
-#define BTN_NEXT  PB14
-#define BTN_PREV  PB15
-#define BTN_OK    PA8
+//uint32_t crsfTime = 0;
 
 typedef struct {
   String label;

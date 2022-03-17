@@ -31,16 +31,12 @@
 #include <stdint.h>
 
 // from https://github.com/DeviationTX/deviation/pull/1009/ ELRS menu implement in deviation TX
-//static uint8_t  currentPktRate = 0x05; //  '25Hz(-123dbm)', '50Hz(-120dbm)', '100Hz(-117dbm)', '200Hz(-112dbm)'
-  //                                           0              1               3                 5      
 
-static uint8_t currentTlmRatio = 0 ; //list = {'Off', '1:128', '1:64', '1:32', '1:16', '1:8', '1:4', '1:2'},
- //                                             0       1        2
-static uint8_t currentBind = 0;
-static uint8_t currentWiFi = 0;
-static uint8_t getParamsCounter = 0;
-static uint8_t currentFrequency = 2; //list = {'915 AU', '915 FCC', '868 EU', '433 AU', '433 EU', '2.4G ISM'},
-//                                               0          1         2          3        4           5
+
+static uint8_t currentPower[8] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};//  list =  {'10 mW', '25 mW', '50 mW', '100 mW', '250 mW', '500 mW', '1000 mW', '2000 mW'},
+  //                                            0        1         2        3        4   
+static uint8_t currentPktRate[4] = {0x06, 0x05, 0x04, 0x02}; //  '25Hz(-123dbm)', '50Hz(-120dbm)', '100Hz(-117dbm)', '200Hz(-112dbm)'
+  //                                           0              1               3                 5      
 
 uint8_t crsfPacket[CRSF_PACKET_SIZE];
 int rcChannels[CRSF_MAX_CHANNEL];
