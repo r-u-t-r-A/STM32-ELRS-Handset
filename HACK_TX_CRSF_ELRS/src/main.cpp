@@ -614,7 +614,7 @@ void setup()  {
   menu[11] = {"VTX Band:", 0, 6, vtx_band, vtx_band_change};
   menu[12] = {"VTX Channel:", 0, 8, vtx_channel, vtx_channel_change};
   menu[13] = {"VTX Power", 0, 5, vtx_power, vtx_power_change};
-  menu[14] = {"VTX Pit", 0, 5, vtx_pit, vtx_pit_mode};
+  menu[14] = {"VTX Pit", 0, 8, vtx_pit, vtx_pit_mode};
   menu[15] = {"WiFi EN:", 0, 0, 0, wifi_en};
   menu[16] = {"RX WiFi update", 0, 0, 0, RX_wifi_update};
   menu[17] = {"EEPROM Reset", 0, 0, 0, reset_eeprom};

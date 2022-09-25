@@ -91,13 +91,13 @@ float rx_voltage = 0.0;
 #define ELRS_LUA_COMMAND_TX_POWER_SET 5
 #define ELRS_LUA_COMMAND_MAX_TX_POWER 6
 #define ELRS_LUA_COMMAND_DYNAMIC_POWER 7
-#define ELRS_LUA_COMMAND_VTX_ADMIN 8
-#define ELRS_LUA_COMMAND_VTX_PIT_MODE 9
+#define ELRS_LUA_COMMAND_VTX_ADMIN 9
+#define ELRS_LUA_COMMAND_VTX_PIT_MODE 13
 #define ELRS_LUA_COMMAND_VTX_BAND 10
 #define ELRS_LUA_COMMAND_VTX_CH 11
 #define ELRS_LUA_COMMAND_VTX_PWR_LVL 12
-#define ELRS_LUA_COMMAND_SEND_VTX 13
-#define ELRS_LUA_COMMAND_WIFI_CONN 14
+#define ELRS_LUA_COMMAND_SEND_VTX 14
+//#define ELRS_LUA_COMMAND_WIFI_CONN 14
 #define ELRS_LUA_COMMAND_ENABLE_WIFI 15
 #define ELRS_LUA_COMMAND_EN_RX_WIFI 16
 #define ELRS_LUA_COMMAND_EN_BLE 17
@@ -119,6 +119,6 @@ const char* vtx_bands_labels[6] = {"BOSCAM A", "BOSCAM B", "BOSCAM C", "BOSCAM E
 uint8_t vtx_channels[8] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
 const char* vtx_channels_labels[8] = {"1", "2", "3", "4", "5", "6", "7", "8"};
 
-uint8_t vtx_pitmode[5] = {0x00, 0x01, 0x02, 0x03, 0x04};
-const char* vtx_pitmode_labels[5] = {"OFF", "ON", "uknown", "unknown", "unknown"};
+uint8_t vtx_pitmode[8] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
+const char* vtx_pitmode_labels[8] = {"OFF", "ON", "AUX1", "AUX2", "AUX3", "AUX4", "AUX5", "AUX6"};
 
