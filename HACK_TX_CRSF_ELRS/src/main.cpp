@@ -1,154 +1,73 @@
 //add in speech emulation for voice notifications
 
 #include <Arduino.h>
-#include <SPI.h>
-#include "nRF24L01.h"
-#include "RF24.h"
 #include <LiquidCrystal_I2C.h>
 #include <HardwareTimer.h>
 #include <Wire.h>
-
 #include "config.h"
 #include "crsf.c"
+#include "mixers.c"
+#include "eeprom_f.c"
 //#include "CRSF_CMD.h"
-//#include "sbus.c"
-//#include "EEPROM_FUNCTIONS.h"
-//#include "button_handler.h"
+#include "sbus.c"
+#include "button_handler.c"
+#include "lcd.c"
+//#include "crsf_telemetry.c"
+//#include "crsf_protocol.h"
 
-//#include "button_handler.c"
+
 
 TIM_TypeDef *Instance_CRSF_TIM = CRSF_TIM_DEF;
 HardwareTimer *CRSF_TIM = new HardwareTimer(Instance_CRSF_TIM);
 
-LiquidCrystal_I2C lcd(0x27, 20, 4);
-
-//RF24 radio(PA4, PB0); //Set CE and CSN pins
-RF24 radio(PB10, PA4);
-
-uint8_t ELRS_TX_Power;
-uint8_t ELRS_Pkt_rate;
-uint8_t ELRS_Tlm_ratio;
-
 //ADC_TypeDef *ADC_instance = ADC1;
-#define I2CEEPROM_ADDR 0x57
-
-// writes a byte of data in memory location addr
-void EEPROM_write(unsigned int addr, byte eeprom_data)  {
-
-  Wire.beginTransmission(I2CEEPROM_ADDR);
-  // set the pointer position
-  //Wire.write((int)(addr >> 8));
-  Wire.write((int)(addr & 0xFF));
-  Wire.write(eeprom_data);
-  Wire.endTransmission();
-  delay(10);
-
-}
-
-// reads a byte of data from memory location addr
-byte EEPROM_read(unsigned int addr)  {
-
-  byte result;
-  Wire.beginTransmission(I2CEEPROM_ADDR);
-  // set the pointer position
-  //Wire.write((int)(addr >> 8));
-  Wire.write((int)(addr & 0xFF));
-  Wire.endTransmission();
-  Wire.requestFrom(I2CEEPROM_ADDR,1); // get the byte of data
-  result = Wire.read();
-  return result;
-}
-
-void EEPROM_update(unsigned int addr, byte to_write) { //to save write cycles of eeprom
-  byte wrtitten = EEPROM_read(addr);
-  if (to_write == wrtitten) {
-    //do nothing, just skip
-  } else {
-    EEPROM_write(addr, to_write);
-  }
-
-}
-
-void reset_eeprom() {
-  EEPROM_write(0, 50);
-  EEPROM_write(1, 127);
-  EEPROM_write(2, 127);
-  EEPROM_write(3, 127);
-  EEPROM_write(4, 127);
-  EEPROM_write(5, 0);
-  EEPROM_write(7, 0);
-}
-
-
-void handleNext() {
-  if(isInLowerLevel) {
-    tempVal++;
-    if(tempVal > menu[currentMenuPos].maxVal) tempVal = menu[currentMenuPos].maxVal;
-  } else {
-    currentMenuPos = (currentMenuPos + 1) % menuSize;
-  }
-}
-
-void handlePrev() {
-  if(isInLowerLevel) {
-    tempVal--;
-    if(tempVal < menu[currentMenuPos].minVal) tempVal = menu[currentMenuPos].minVal;
-  } else {
-    currentMenuPos--;
-    if(currentMenuPos < 0) currentMenuPos = menuSize - 1;
-  }
-}
-
-void handleBack() {
-  if(isInLowerLevel) {
-    isInLowerLevel = false;
-  }
-}
-
-void handleOk() {
-  if(menu[currentMenuPos].handler != NULL && menu[currentMenuPos].maxVal <= menu[currentMenuPos].minVal) {
-    (*(menu[currentMenuPos].handler))();
-    return;
-  }
-  if(isInLowerLevel) {
-    menu[currentMenuPos].currentVal = tempVal;
-    isInLowerLevel = false;
-  } else {
-    tempVal = menu[currentMenuPos].currentVal;
-    isInLowerLevel = true;
-  }
-}
+/*
+void (*doMixing[2])() { - array of void pointers - instead of switch(...)
+  default_mixer,
+  elevon_mixer
+} ; */
 
 void show_data() {
 
     if (currentMenuPos == 0) {
+      
+      char buffer[16];
        
-      lcd.setCursor(0, 2);
-      lcd.print("R");
-      lcd.setCursor(5, 2);
-      lcd.print("T");
-      lcd.setCursor(10, 2);
-      lcd.print("A");
-      lcd.setCursor(15, 2);
-      lcd.print("E");
-  
-      char buffer[16]; sprintf(buffer,"%4d",yaw); lcd.setCursor(1, 2); lcd.print(buffer);
-      sprintf(buffer,"%4d",throttle); lcd.setCursor(6, 2); lcd.print(buffer);
-      sprintf(buffer,"%4d",roll); lcd.setCursor(11, 2); lcd.print(buffer);
-      sprintf(buffer,"%4d",pitch); lcd.setCursor(16, 2); lcd.print(buffer);
-  
+      lcd.setCursor(0, 2);   
+      lcd.print("R");  
+      sprintf(buffer,"%4d",yaw);      
+      lcd.print(buffer);
+
+      lcd.setCursor(5, 2);   
+      lcd.print("T");  
+      sprintf(buffer,"%4d",throttle); 
+      lcd.print(buffer);
+
+      lcd.setCursor(10, 2);  
+      lcd.print("A");  
+      sprintf(buffer,"%4d",roll);     
+      lcd.print(buffer);
+
+      lcd.setCursor(15, 2);  
+      lcd.print("E");  
+      sprintf(buffer,"%4d",pitch);
+      lcd.print(buffer);
+
       lcd.setCursor(0, 3);
       lcd.print("Bat:");
-      String voltage = String((analogRead(battery_in) * ((3.3 / 4096) * 2.751)), 2);
-      lcd.setCursor(4, 3); lcd.print(voltage);
+      String voltage = String((analogRead(battery_in) * ((3.3 / 4096) * bat_volt_div_ratio)), 2);
+      //lcd.setCursor(4, 3); 
+      lcd.print(voltage); lcd.print("V");
 
       if (ELRS_RF == true) {
 
-        lcd.setCursor(14, 3); lcd.print("ELRS ");
+        lcd.setCursor(14, 3); 
+        lcd.print("ELRS ");
 
       } else {
 
-        lcd.setCursor(14, 3); lcd.print("nRF24");
+        lcd.setCursor(14, 3); 
+        lcd.print("USB");
 
       }
      
@@ -156,174 +75,116 @@ void show_data() {
 
       lcd.setCursor(0, 2);
       lcd.print("Roll =");
-      char buffer[16]; sprintf(buffer,"%4d",roll); lcd.setCursor(6, 2); lcd.print(buffer);
+      char buffer[16]; 
+      sprintf(buffer,"%4d",roll); 
+      //lcd.setCursor(6, 2); 
+      lcd.print(buffer);
 
     } else if (currentMenuPos == 2 && isInLowerLevel == true) {
 
       lcd.setCursor(0, 2);
       lcd.print("Pitch =");
-      char buffer[16]; sprintf(buffer,"%4d",pitch); lcd.setCursor(7, 2); lcd.print(buffer);
+      char buffer[16]; 
+      sprintf(buffer,"%4d",pitch); 
+      //lcd.setCursor(7, 2); 
+      lcd.print(buffer);
 
     } else if (currentMenuPos == 3 && isInLowerLevel == true) {
 
       lcd.setCursor(0, 2);
       lcd.print("Yaw =");
-      char buffer[16]; sprintf(buffer,"%4d",yaw); lcd.setCursor(5, 2); lcd.print(buffer);
+      char buffer[16]; 
+      sprintf(buffer,"%4d",yaw); 
+      //lcd.setCursor(5, 2); 
+      lcd.print(buffer);
 
     } else if (currentMenuPos == 4 && isInLowerLevel == true) {
 
       lcd.setCursor(0, 2);
       lcd.print("Throttle =");
-      char buffer[16]; sprintf(buffer,"%4d",throttle); lcd.setCursor(11, 2); lcd.print(buffer);
+      char buffer[16]; 
+      sprintf(buffer,"%4d",throttle); 
+      //lcd.setCursor(11, 2); 
+      lcd.print(buffer);
 
+    } else if (currentMenuPos == 18) {
+      lcd.setCursor(0, 2);
+      lcd.print("RSSI:");
+      lcd.print(LinkStatistics.uplink_RSSI_1);
+      lcd.setCursor(0, 3);
+      lcd.print("Bat:");
+      rx_voltage = batteryVoltage.voltage / 10.0;
+      String rx_bat = String(rx_voltage, 1);
+      lcd.print(rx_bat);
+      lcd.print("V");
+      lcd.setCursor(10, 2);
+      lcd.print("LQ:");
+      lcd.print(LinkStatistics.uplink_Link_quality);
+      lcd.print(" ");
+    
     }
 }
 
-ENUM_BUTTON getButton() {
-  if(!digitalRead(BTN_BACK)) return BACK;
-  if(!digitalRead(BTN_NEXT)) return NEXT;
-  if(!digitalRead(BTN_PREV)) return PREV;
-  if(!digitalRead(BTN_OK)) return OK;
-
-  return NONE;
-}
-
-void drawMenu() {
-  static unsigned long lastRead = 0;
-  static ENUM_BUTTON lastPressedButton = OK;
-  static unsigned int isPressedSince = 0;
-  int autoSwitchTime = 500;
-
-  ENUM_BUTTON pressedButton = getButton();
-
-  if(pressedButton == NONE && lastRead != 0) {
-    isPressedSince = 0;
-    return;
-  }
-  if(pressedButton != lastPressedButton) {
-    isPressedSince = 0;
-  }
-
-  if(isPressedSince > 3) autoSwitchTime = 70;
-  if(lastRead != 0 && millis() - lastRead < autoSwitchTime && pressedButton == lastPressedButton) return;
-
-  isPressedSince++;
-  lastRead = millis();
-  lastPressedButton = pressedButton;
-  
-  switch(pressedButton) {
-    case NEXT: handleNext(); break;
-    case PREV: handlePrev(); break;
-    case BACK: handleBack(); break;
-    case OK: handleOk(); break;
-  }
-
-  
-  lcd.clear();
-  
-  if(isInLowerLevel) {
-    lcd.setCursor(0, 0);
-    lcd.print(menu[currentMenuPos].label);
-    lcd.setCursor(0, 1);
-    lcd.print(F("> "));
-
-    if(menu[currentMenuPos].handler != NULL) {
-      (*(menu[currentMenuPos].handler))();
-    } else {
-      lcd.print(tempVal);
-    }
-  } else {
-    lcd.setCursor(0, 0);
-    lcd.print(F("Main Menu:"));
-    lcd.setCursor(0, 1);
-    lcd.print(F("> "));
-
-    lcd.print(menu[currentMenuPos].label);
-   
-  }
-}
 
 void wifi_en() {
   
-  buildElrsPacket(crsfCmdPacket, 15, 4);
-  command_to_send = true;
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_ENABLE_WIFI, 4);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);
+
 }
 
 void RX_wifi_update() {
  
-  buildElrsPacket(crsfCmdPacket, 16, 4);
-  command_to_send = true;
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_EN_RX_WIFI, 4);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);
   
 }
 
-
 void vtx_band_change() {
-
-  switch (tempVal)  {
-  case (1):
-    lcd.print("BOSCAM_A");
-    break;
-  case (2):
-    lcd.print("BOSCAM_B");
-    break;
-  case (3):
-    lcd.print("BOSCAM_C");
-    break;
-  case (4):
-    lcd.print("BOSCAM_E");
-    break;
-   case (5):
-    lcd.print("RACEBAND");
-    break;
-  case (6):
-    lcd.print("LOWBAND");
-    break;
-  }
+  lcd.print(vtx_bands_labels[tempVal]);
   vtx_band = tempVal;
   EEPROM_write(8, vtx_band);
   
-  buildElrsPacket(crsfCmdPacket, 8, 1);
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_VTX_ADMIN, 1);
   ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE); //open vtx administrator
- // delay(20);
-
-  buildElrsPacket(crsfCmdPacket, 9, 0);
-  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE); // probably pit mode? - set to one cahnges nothing
- // delay(20);
-
-  buildElrsPacket(crsfCmdPacket, 10, vtx_band);
- // buildElrsPacket(crsfCmdPacket, 10, 5);
-  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE); //band
- // delay(20);
-
-  buildElrsPacket(crsfCmdPacket, 11, vtx_channel);
- // buildElrsPacket(crsfCmdPacket, 11, (tempVal - 1));
-  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);// channel
- // delay(20);
-
-  buildElrsPacket(crsfCmdPacket, 12, vtx_power);
+  //delay(20);
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_VTX_PWR_LVL, vtx_power);
   //buildElrsPacket(crsfCmdPacket, 12, tempVal);
   ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);// power
- // delay(20);
-
-  buildElrsPacket(crsfCmdPacket, 13, 1);
-  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);// vtx send
- 
+  //delay(20);
   
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_VTX_BAND, vtx_bands[vtx_band]);
+ // buildElrsPacket(crsfCmdPacket, 10, 5);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE); //band
+  //delay(20);
+
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_VTX_CH, vtx_channels[vtx_channel]);
+ // buildElrsPacket(crsfCmdPacket, 11, (tempVal - 1));
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);// channel
+  //delay(20);
+
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_VTX_PIT_MODE, vtx_pitmode[vtx_pit]);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE); // probably pit mode? - set to one cahnges nothing
+  //delay(20);
+
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_SEND_VTX, 1);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);
 }
 
 void vtx_channel_change() {
+/*
   lcd.print(tempVal);
   vtx_channel = tempVal - 1;
   EEPROM_write(9, vtx_channel);
   
   buildElrsPacket(crsfCmdPacket, 8, 1);
   ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE); //open vtx administrator
- // delay(20);
-
-  buildElrsPacket(crsfCmdPacket, 9, 0);
-  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE); // probably pit mode? - set to one cahnges nothing
   //delay(20);
-
+  buildElrsPacket(crsfCmdPacket, 9, vtx_power);
+  //buildElrsPacket(crsfCmdPacket, 12, tempVal);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);// power
+  //delay(20);
+  
   buildElrsPacket(crsfCmdPacket, 10, vtx_band);
  // buildElrsPacket(crsfCmdPacket, 10, 5);
   ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE); //band
@@ -334,30 +195,112 @@ void vtx_channel_change() {
   ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);// channel
   //delay(20);
 
-  buildElrsPacket(crsfCmdPacket, 12, vtx_power);
+  buildElrsPacket(crsfCmdPacket, 12, vtx_pit);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE); // probably pit mode? - set to one cahnges nothing
+  //delay(20);
+*/
+  
+  lcd.print(vtx_channels_labels[tempVal]);
+  vtx_channel = tempVal;
+  EEPROM_write(9, vtx_channel);
+  
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_VTX_ADMIN, 1);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE); //open vtx administrator
+  //delay(20);
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_VTX_PWR_LVL, vtx_power);
   //buildElrsPacket(crsfCmdPacket, 12, tempVal);
   ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);// power
   //delay(20);
+  
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_VTX_BAND, vtx_bands[vtx_band]);
+ // buildElrsPacket(crsfCmdPacket, 10, 5);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE); //band
+  //delay(20);
 
-  buildElrsPacket(crsfCmdPacket, 13, 1);
-  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);// vtx send
-  
-  
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_VTX_CH, vtx_channels[vtx_channel]);
+ // buildElrsPacket(crsfCmdPacket, 11, (tempVal - 1));
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);// channel
+  //delay(20);
+
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_VTX_PIT_MODE, vtx_pitmode[vtx_pit]);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE); // probably pit mode? - set to one cahnges nothing
+  //delay(20);
+
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_SEND_VTX, 1);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);
 }
 
 void vtx_power_change() {
+/*
+  lcd.print(tempVal + 1);
+  vtx_power = tempVal;
+  EEPROM_write(10, vtx_power);
+  
+ buildElrsPacket(crsfCmdPacket, 8, 1);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE); //open vtx administrator
+  //delay(20);
+  buildElrsPacket(crsfCmdPacket, 9, vtx_power);
+  //buildElrsPacket(crsfCmdPacket, 12, tempVal);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);// power
+  //delay(20);
+  
+  buildElrsPacket(crsfCmdPacket, 10, vtx_band);
+ // buildElrsPacket(crsfCmdPacket, 10, 5);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE); //band
+  //delay(20);
+
+  buildElrsPacket(crsfCmdPacket, 11, vtx_channel);
+ // buildElrsPacket(crsfCmdPacket, 11, (tempVal - 1));
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);// channel
+  //delay(20);
+
+  buildElrsPacket(crsfCmdPacket, 12, vtx_pit);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE); // probably pit mode? - set to one cahnges nothing
+  //delay(20); */
+
   lcd.print(tempVal);
   vtx_power = tempVal;
   EEPROM_write(10, vtx_power);
   
-  buildElrsPacket(crsfCmdPacket, 8, 1);
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_VTX_ADMIN, 1);
   ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE); //open vtx administrator
   //delay(20);
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_VTX_PWR_LVL, vtx_power);
+  //buildElrsPacket(crsfCmdPacket, 12, tempVal);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);// power
+  //delay(20);
+  
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_VTX_BAND, vtx_bands[vtx_band]);
+ // buildElrsPacket(crsfCmdPacket, 10, 5);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE); //band
+  //delay(20);
 
-  buildElrsPacket(crsfCmdPacket, 9, 0);
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_VTX_CH, vtx_channels[vtx_channel]);
+ // buildElrsPacket(crsfCmdPacket, 11, (tempVal - 1));
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);// channel
+  //delay(20);
+
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_VTX_PIT_MODE, vtx_pitmode[vtx_pit]);
   ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE); // probably pit mode? - set to one cahnges nothing
   //delay(20);
 
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_SEND_VTX, 1);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);
+}
+
+void vtx_pit_mode() {
+/*  lcd.print(tempVal);
+  vtx_power = tempVal;
+  EEPROM_write(13, vtx_power);
+  
+  buildElrsPacket(crsfCmdPacket, 8, 1);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE); //open vtx administrator
+  //delay(20);
+  buildElrsPacket(crsfCmdPacket, 9, vtx_power);
+  //buildElrsPacket(crsfCmdPacket, 12, tempVal);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);// power
+  //delay(20);
+  
   buildElrsPacket(crsfCmdPacket, 10, vtx_band);
  // buildElrsPacket(crsfCmdPacket, 10, 5);
   ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE); //band
@@ -368,15 +311,41 @@ void vtx_power_change() {
   ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);// channel
   //delay(20);
 
-  buildElrsPacket(crsfCmdPacket, 12, vtx_power);
+  buildElrsPacket(crsfCmdPacket, 12, vtx_pit);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE); // probably pit mode? - set to one cahnges nothing
+  //delay(20);
+
+
+  buildElrsPacket(crsfCmdPacket, 13, 1);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);// vtx send */
+  lcd.print(vtx_pitmode_labels[tempVal]);
+  vtx_pit = tempVal;
+  EEPROM_write(13, vtx_pit);
+
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_VTX_ADMIN, 1);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE); //open vtx administrator
+  //delay(20);
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_VTX_PWR_LVL, vtx_power);
   //buildElrsPacket(crsfCmdPacket, 12, tempVal);
   ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);// power
   //delay(20);
-
-  buildElrsPacket(crsfCmdPacket, 13, 1);
-  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);// vtx send
   
- // 
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_VTX_BAND, vtx_bands[vtx_band]);
+ // buildElrsPacket(crsfCmdPacket, 10, 5);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE); //band
+  //delay(20);
+
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_VTX_CH, vtx_channels[vtx_channel]);
+ // buildElrsPacket(crsfCmdPacket, 11, (tempVal - 1));
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);// channel
+  //delay(20);
+
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_VTX_PIT_MODE, vtx_pitmode[vtx_pit]);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE); // probably pit mode? - set to one cahnges nothing
+  //delay(20);
+
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_SEND_VTX, 1);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);
 }
 
 void Trim_T() {
@@ -384,6 +353,7 @@ void Trim_T() {
   lcd.print(tempVal);
   EEPROM_update(1, tempVal);
   throttle_fine = tempVal;
+
 }
 
 void Trim_Y() {
@@ -391,6 +361,7 @@ void Trim_Y() {
   lcd.print(tempVal);
   EEPROM_update(2, tempVal);
   yaw_fine = tempVal;
+
 }
 
 void Trim_R() {
@@ -409,14 +380,22 @@ void Trim_P() {
   
 }
 
-void CH_NRF24() {
-
-  lcd.print(tempVal);
+void USB_DATA_OUT() {
+switch(tempVal) {
+  case(1):
+    lcd.print("SBUS out");
+    break;
+  case(0):
+    lcd.print("debug");
+    break;
+  }
+  usb_data = tempVal;
   EEPROM_update(0, tempVal);
+
 }
 
 void ELRS_Pkt_rate_change() {
-
+/*
   switch (tempVal)  {
   case (3):
     lcd.print("200Hz");
@@ -436,24 +415,33 @@ void ELRS_Pkt_rate_change() {
   EEPROM_update(6, ELRS_Pkt_rate);
   
   buildElrsPacket(crsfCmdPacket, 1, ELRS_Pkt_rate);
-  command_to_send = true;
- // delay(20); 
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);
+ // delay(20); */
+  ELRS_Pkt_rate = tempVal;
+  EEPROM_update(6, ELRS_Pkt_rate);
+  lcd.print(elrs_tx_pkt_rate_labels_868[tempVal]);
+ 
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_PACKET_RATE, elrs_tx_pkt_rate[tempVal]);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);
 }
 
 void RC_protocol() {
+
   switch(tempVal) {
   case(1):
     lcd.print("ExpressLRS");
     break;
   case(0):
-    lcd.print("nRF24");
+    lcd.print("SBUS over USB");
     break;
   }
+
   EEPROM_update(5, tempVal);
+
 }
 
 void ELRS_POWER() {
-  switch (tempVal)  {
+/*  switch (tempVal)  {
   case (0):
     lcd.print("10mW    ");
     break;
@@ -480,17 +468,28 @@ void ELRS_POWER() {
   ELRS_TX_Power = tempVal;
   EEPROM_update(7, ELRS_TX_Power);
   
-  buildElrsPacket(crsfCmdPacket, 6, ELRS_TX_Power);
-  command_to_send = true;
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_MAX_TX_POWER, ELRS_TX_POWER);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);
   delay(20);
-  buildElrsPacket(crsfCmdPacket, 5, ELRS_TX_Power);
-  command_to_send = true;
- // delay(20);
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_TX_POWER_SET, ELRS_TX_POWER);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);
+ // delay(20); */
+  
+  ELRS_TX_Power = tempVal;
+  EEPROM_update(7, ELRS_TX_Power);
+
+  lcd.print(elrs_tx_pwr_lvl_labels[tempVal]);
+  
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_MAX_TX_POWER, elrs_tx_pwr_lvl[ELRS_TX_Power]);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);
+  delay(20);
+  buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_TX_POWER_SET, elrs_tx_pwr_lvl[ELRS_TX_Power]);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);
  
 }
 
 void ELRS_telemetry_ratio() {
-
+/*
   switch (tempVal)  {
   case (1):
     lcd.print("1:128");
@@ -522,107 +521,44 @@ void ELRS_telemetry_ratio() {
   ELRS_Tlm_ratio = tempVal;
   EEPROM_update(11, ELRS_Tlm_ratio);
   buildElrsPacket(crsfCmdPacket, 2, ELRS_Tlm_ratio);
-  command_to_send = true;
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE); */
+
+  ELRS_Tlm_ratio = tempVal;
+  EEPROM_update(11, ELRS_Tlm_ratio);
+  lcd.print(elrs_telem_ratio_labels[ELRS_Tlm_ratio]);
+  
+  buildElrsPacket(crsfCmdPacket, 2, ELRS_Tlm_ratio);
+  ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);
   
  // delay(20);
 }
 
-void radio_begin() {
-
-  radio.begin();
-  radio.setAutoAck(false);
-  radio.setDataRate(RF24_250KBPS); 
-  radio.setChannel(ch);
-  radio.setPALevel(RF24_PA_MAX);
-  radio.openWritingPipe(radio_pipe);
-  //radio.openReadingPipe(1, radio_pipe);
+void select_mixer() {
+  lcd.print(mixer_labels[tempVal]);
+  mixer_selected = tempVal;
+  EEPROM_update(12, tempVal);
 
 }
 
-void convert_the_data_new() {
- 
-  throttle = map(analogRead(joystick_T), 3620, 860, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  yaw = map(analogRead(joystick_Y), 714, 3680, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  pitch = map(analogRead(joystick_P), 740, 3560, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  roll = map(analogRead(joystick_R), 3460, 920, RC_CHANNEL_MIN, RC_CHANNEL_MAX);  
-
-  throttle = throttle + (throttle_fine - 127) * 4;
-  yaw = yaw + (yaw_fine - 127) * 4;
-  pitch = pitch + (pitch_fine - 127) * 4;
-  roll = roll + (roll_fine - 127) * 4;  
-
-  throttle = constrain(throttle, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  yaw = constrain(yaw, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  pitch = constrain(pitch, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  roll = constrain(roll, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-
-  if (ELRS_RF == true /* || SBUS_over_Serial == true */) {
-
-    rcChannels[0]=yaw;
-    rcChannels[1]=throttle;
-    rcChannels[2]=roll;
-    rcChannels[3]=pitch;
-    rcChannels[4]=map(digitalRead(AUX1), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-    rcChannels[5]=map(digitalRead(AUX2), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-    rcChannels[6]=map(digitalRead(AUX3), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-    rcChannels[7]=map(digitalRead(AUX4), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-
-  } else {
-    
-    tx.txCH2 = map(throttle, RC_CHANNEL_MIN, RC_CHANNEL_MAX, 0, 255);
-    tx.txCH1 = map(yaw, RC_CHANNEL_MIN, RC_CHANNEL_MAX, 0, 255);
-    tx.txCH4 = map(pitch, RC_CHANNEL_MIN, RC_CHANNEL_MAX, 0, 255);
-    tx.txCH3 = map(roll, RC_CHANNEL_MIN, RC_CHANNEL_MAX, 0, 255);
-
-    tx.txCH5 = digitalRead(AUX1);
-    tx.txCH6 = digitalRead(AUX2);  
-
-    tx.txCH7 = digitalRead(AUX3);
-    tx.txCH8 = digitalRead(AUX4);
-  }
-}
-
-void transmit() {
-
-  SerialUSB.println("Trying to transmit");
-  radio.stopListening();
-  //delay(1);
-  radio.write(&tx, sizeof(tx));
-  SerialUSB.println("done");
-
-}
-
-void showSplashScreen() {
-  //lcd.backlight();
-  lcd.setCursor(0, 0);
-  lcd.print("HACK_RC_TX ELRS");
-  SerialUSB.println("HACK_TX debug");
-  lcd.setCursor(0, 1);
-  lcd.print("BY ARTUR KUC");
-  delay(2000);
-  //lcd.noBacklight();
-  lcd.clear();
-  delay(1000);
-}
+void elrs_telemetry() {}
 
 void CRSF_SEND() {
-
-  convert_the_data_new();
+  doMixing[mixer_selected]();
   crsfPreparePacket(crsfPacket, rcChannels);
+  ELRS_Serial.write(crsfPacket, CRSF_PACKET_SIZE); //Send data over CRSF to tx module
 
-  if (command_to_send == true) {
-    ELRS_Serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE); //function to ensure that packets are sent at set intervals, no matter is it command packet or data packet
-    command_to_send == false;
-  } else {
-    ELRS_Serial.write(crsfPacket, CRSF_PACKET_SIZE); //Send data over CRSF to tx module
-  }
+} 
+
+void SBUS_SEND() {
+  doMixing[mixer_selected]();
+  sbusPreparePacket(sbusPacket, rcChannels, false, false);
+  SerialUSB.write(sbusPacket, SBUS_PACKET_LENGTH);
 }
 
 void setup()  {
 
   SerialUSB.begin(115200);
-  SPI.setClockDivider(SPI_CLOCK_DIV64);
-  //Wire.setClock(100000);
+  
   pinMode(Module_power, OUTPUT);
   digitalWrite(Module_power, LOW);
   ELRS_Serial.begin(CRSF_baudrate);
@@ -643,7 +579,7 @@ void setup()  {
   Wire.begin();
   Wire.setClock(100000);
   
-  ch = EEPROM_read(0);
+  usb_data = EEPROM_read(0);
   throttle_fine = EEPROM_read(1);
   yaw_fine = EEPROM_read(2);
   pitch_fine = EEPROM_read(3);
@@ -652,9 +588,11 @@ void setup()  {
   ELRS_Pkt_rate = EEPROM_read(6);
   ELRS_TX_Power = EEPROM_read(7);
   vtx_band = EEPROM_read(8);
-  vtx_channel = EEPROM_read(9) + 1;
+  vtx_channel = EEPROM_read(9);
   vtx_power = EEPROM_read(10);
   ELRS_Tlm_ratio = EEPROM_read(11);
+  mixer_selected = EEPROM_read(12);
+  vtx_pit = EEPROM_read(13);
   
   pinMode(BTN_NEXT, INPUT_PULLUP);
   pinMode(BTN_PREV, INPUT_PULLUP);
@@ -667,17 +605,20 @@ void setup()  {
   menu[2] = {"Pitch Trim", 0, 255, pitch_fine, Trim_P};
   menu[3] = {"Yaw Trim", 0, 255, yaw_fine, Trim_Y};
   menu[4] = {"Throttle Trim", 0, 255, throttle_fine, Trim_T};
-  menu[5] = {"RC protocol:", 0, 1, ELRS_RF, RC_protocol};
-  menu[6] = {"ELRS Power:", 0, 7, ELRS_TX_Power, ELRS_POWER}; //list =  {'10 mW', '25 mW', '50 mW', '100 mW', '250 mW', '500 mW', '1000 mW', '2000 mW'},
-  menu[7] = {"ELRS Pkt Rate:", 0, 3, ELRS_Pkt_rate, ELRS_Pkt_rate_change};
-  menu[8] = {"Tlm ratio:", 0, 7, ELRS_Tlm_ratio, ELRS_telemetry_ratio};
-  menu[9] = {"NRF24 CH:", 0, 125, ch, CH_NRF24};
-  menu[10] = {"VTX Band:", 1, 6, vtx_band, vtx_band_change};
-  menu[11] = {"VTX Channel:", 1, 8, vtx_channel, vtx_channel_change};
-  menu[12] = {"VTX Power", 1, 3, vtx_power, vtx_power_change};
-  menu[13] = {"WiFi EN:", 0, 0, 0, wifi_en};
-  menu[14] = {"RX WiFi update", 0, 0, 0, RX_wifi_update};
-  menu[15] = {"EEPROM Reset", 0, 0, 0, reset_eeprom};
+  menu[5] = {"Mixer:", 0, (number_of_mixers - 1), mixer_selected, select_mixer};
+  menu[6] = {"RC protocol:", 0, 1, ELRS_RF, RC_protocol};
+  menu[7] = {"ELRS Power:", 0, 7, ELRS_TX_Power, ELRS_POWER}; //list =  {'10 mW', '25 mW', '50 mW', '100 mW', '250 mW', '500 mW', '1000 mW', '2000 mW'},
+  menu[8] = {"ELRS Pkt Rate:", 0, 5, ELRS_Pkt_rate, ELRS_Pkt_rate_change};
+  menu[9] = {"Tlm ratio:", 0, 7, ELRS_Tlm_ratio, ELRS_telemetry_ratio};
+  menu[10] = {"USB data out:", 0, 1, usb_data, USB_DATA_OUT};
+  menu[11] = {"VTX Band:", 0, 6, vtx_band, vtx_band_change};
+  menu[12] = {"VTX Channel:", 0, 8, vtx_channel, vtx_channel_change};
+  menu[13] = {"VTX Power", 0, 5, vtx_power, vtx_power_change};
+  menu[14] = {"VTX Pit", 0, 5, vtx_pit, vtx_pit_mode};
+  menu[15] = {"WiFi EN:", 0, 0, 0, wifi_en};
+  menu[16] = {"RX WiFi update", 0, 0, 0, RX_wifi_update};
+  menu[17] = {"EEPROM Reset", 0, 0, 0, reset_eeprom};
+  menu[18] = {"TELEMETRY", 0, 0, 0, elrs_telemetry};
 
   menuSize = sizeof(menu)/sizeof(STRUCT_MENUPOS);
 
@@ -687,10 +628,13 @@ void setup()  {
   //showSplashScreen();
 
   if (ELRS_RF == false) {
+    //strat sending sbus over usb serial using timer
     digitalWrite(Module_power, LOW);
-    radio_begin();
     CRSF_TIM->pause();
-
+    CRSF_TIM->setPrescaleFactor(72);
+    CRSF_TIM->setOverflow(250, HERTZ_FORMAT); 
+    CRSF_TIM->attachInterrupt(SBUS_SEND);
+    CRSF_TIM->resume();
   } else {
       //Turn on ELRS Module
     digitalWrite(Module_power, HIGH);
@@ -700,9 +644,9 @@ void setup()  {
     CRSF_TIM->attachInterrupt(CRSF_SEND);
     CRSF_TIM->resume();
   }
-  SerialUSB.println("showing splashscreen");
+  
   showSplashScreen();
-  SerialUSB.println("done");
+  
 
   for (int i = 0; i < CRSF_MAX_CHANNEL; i++) {
 
@@ -717,32 +661,15 @@ void loop() {
   unsigned long currentMillis = millis();
 
   if ((currentMillis - lcdMillis) > 333) {
-    
-  drawMenu();
-  show_data();
-  lcdMillis = currentMillis;
+    drawMenu();
+    show_data();
+    lcdMillis = currentMillis;
   }
-  //convert_the_data_new();
+  serialtelemetryevent();
+ /* rx_voltage = batteryVoltage.voltage / 10;
+  if (usb_data = 0){
+  SerialUSB.print("RSSI:"); SerialUSB.println(LinkStatistics.uplink_RSSI_1);
+  SerialUSB.print("bat:"); SerialUSB.print(rx_voltage); SerialUSB.println("V");
+  } */
 
-  if (ELRS_RF == false)  {
-  
-    transmit(); //transmit data over NRF24
-/*
-  } else if (ELRS_RF == true) {
-
-    if (currentMicros > crsfTime) {
-
-      crsfPreparePacket(crsfPacket, rcChannels);
-      ELRS_Serial.write(crsfPacket, CRSF_PACKET_SIZE); //Send data over CRSF to tx module
-      crsfTime = currentMicros + CRSF_TIME_BETWEEN_FRAMES_US;
-
-    } */
-  }
-
-  SerialUSB.print("Took ");
-  SerialUSB.print((millis() - previousMillis));
-  SerialUSB.println("ms"); //Print time needed for one loop of code
-  previousMillis = millis();
-
-  
 }

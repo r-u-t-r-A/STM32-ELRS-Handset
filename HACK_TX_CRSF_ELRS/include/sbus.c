@@ -1,29 +1,31 @@
 
+#include "sbus.h"
 #include <stdint.h>
-/*
-long map(long x, long in_min, long in_max, long out_min, long out_max)
- {
-  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
-}
-*/
 
-void sbusPreparePacket(uint8_t packet[], int channels[]){
+uint8_t sbusPacket[SBUS_PACKET_LENGTH];
+//int rcChannels[SBUS_CHANNEL_NUMBER];
+
+void sbusPreparePacket(uint8_t packet[], int channels[], bool isSignalLoss, bool isFailsafe){
 
     static int output[SBUS_CHANNEL_NUMBER] = {0};
 
     /*
-     * Map 1000-2000 with middle at 1500 chanel values to
+     * Map 192-1811 with middle at 998 chanel values to
      * 173-1811 with middle at 992 S.BUS protocol requires
      */
     for (uint8_t i = 0; i < SBUS_CHANNEL_NUMBER; i++) {
-      if (i <= 3) {
-        output[i] = map(channels[i], RC_CHANNEL_MIN, RC_CHANNEL_MAX, SBUS_MIN_OFFSET, SBUS_MAX_OFFSET);
-      } else {
-        output[i] = map(channels[i], RC_CHANNEL_MIN, RC_CHANNEL_MAX, SBUS_MIN_OFFSET, SBUS_MAX_OFFSET);
-      }
+      
+        output[i] = map(rcChannels[i], RC_CHANNEL_MIN, RC_CHANNEL_MAX, SBUS_MIN_OFFSET, SBUS_MAX_OFFSET);
+     
     }
 
     uint8_t stateByte = 0x00;
+    if (isSignalLoss) {
+        stateByte |= SBUS_STATE_SIGNALLOSS;
+    }
+    if (isFailsafe) {
+        stateByte |= SBUS_STATE_FAILSAFE;
+    }
     packet[0] = SBUS_FRAME_HEADER; //Header
 
     packet[1] = (uint8_t) (output[0] & 0x07FF);
@@ -52,7 +54,3 @@ void sbusPreparePacket(uint8_t packet[], int channels[]){
     packet[23] = stateByte; //Flags byte
     packet[24] = SBUS_FRAME_FOOTER; //Footer
 }
-
-uint8_t sbusPacket[SBUS_PACKET_LENGTH];
-uint32_t sbusTime = 0;
-bool SBUS_over_Serial = false;
