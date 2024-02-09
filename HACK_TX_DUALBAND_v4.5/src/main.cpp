@@ -18,6 +18,10 @@
 //SFW model names to be used in school
 //#define SCHOOL
 
+/*
+code is provided as is - no warranty it will work for your use case - use at your own risk
+*/
+
 //debug
 //#define debug
 
