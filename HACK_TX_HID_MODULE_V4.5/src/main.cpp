@@ -20,6 +20,9 @@
 #define CE_PIN 20
 #define CSN_PIN 17
 
+#define MRESET_PIN 21
+#define BUZZER_PIN 22
+
 int selected_protocol = 0;
 
 RF24 radio(CE_PIN, CSN_PIN);
@@ -260,6 +263,22 @@ void led_loop() {
   }
 }
 
+void device_reset() {
+  digitalWrite(MRESET_PIN, LOW);
+  delay(100);
+  digitalWrite(MRESET_PIN, HIGH);
+}
+
+void beep_void() {
+  digitalWrite(BUZZER_PIN, HIGH);
+  delay(100);
+  digitalWrite(BUZZER_PIN, LOW);
+}
+
+void send_tele() {
+
+}
+
 void Config() {
   //if (crsf.getCommandType() == 1) {
   if (crsf.getCommandType() == 20) {
@@ -287,9 +306,21 @@ void Config() {
     int rf_pa_level = crsf.getCommandValue();
     rf_pa_level = constrain(rf_pa_level, 0, 3);
     radio.setPALevel(rf_pa_level);
-    
-  } else {
+    return;
 
+  } else if (crsf.getCommandType() == 24) {
+    
+    device_reset();
+    return;
+
+  } else if (crsf.getCommandType() == 25) {
+    
+    beep_void();
+    return;  
+  
+  } else if (crsf.getCommandType() == 30) {
+    send_tele();
+    return;
   }
 }
 
@@ -332,6 +363,11 @@ void setup()
   tx.txCH6 = 0;
   tx.txCH7 = 0;
   tx.txCH8 = 0;
+
+  pinMode(MRESET_PIN, OUTPUT);
+  digitalWrite(MRESET_PIN, HIGH);
+  pinMode(BUZZER_PIN, OUTPUT);
+  digitalWrite(BUZZER_PIN, LOW);
 }
 
 void loop()

@@ -107,7 +107,7 @@ btn_config btn_map[NUM_BUTTONS] = {
     7,                    // id
     CHANNEL_AUX_SW_MID,   // lower bound
     CHANNEL_AUX_SW_HIGH,  // upper bound
-    true                  // invert  - EX FOR INVERT
+    false                  // invert  - EX FOR INVERT
     }
 };
 

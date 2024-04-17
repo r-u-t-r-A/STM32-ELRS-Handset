@@ -1,10 +1,21 @@
 //Inputs outputs
 
+bool armed = false;
+bool use_buzzer = false;
+
+struct HID_tele {
+  uint8_t batt;
+  uint8_t status;
+  uint8_t protocol;
+} HID_tele_struct;
+
+const int HID_tele_size = sizeof(HID_tele);
+
 int control_protocol = 0;
 
 bool usb_data = 0;
 
-int mixer_selected = 0;
+int mixer_selected;
 unsigned long previousMillis = 0;
 unsigned long lcdMillis = 0;
 
@@ -42,7 +53,7 @@ typedef enum {
   BACK, NEXT, PREV, OK, NONE
 } ENUM_BUTTON;
 
-STRUCT_MENUPOS menu[23];
+STRUCT_MENUPOS menu[24];
 
 int currentMenuPos = 0;
 int menuSize;
@@ -103,10 +114,30 @@ float rx_voltage = 0.0;
 #define ELRS_LUA_COMMAND_EN_RX_WIFI 16  //ok
 #define ELRS_LUA_COMMAND_BIND 17
 
+
 #define HID_COMMAND_PROTOCOL 20
 #define HID_COMMAND_MODEL_ID 21
 #define HID_COMMAND_TX_CHANNEL 22
 #define HID_COMMAND_TX_PWR 23
+#define HID_COMMAND_RESET 24
+#define HID_COMMAND_BEEP 25
+
+
+#define EEPROM_USB_DAT_ADDR 0
+#define EEPROM_PROTOCOL_ADDR 5
+#define EEPROM_ELRS_PKT_R_ADDR 6
+#define EEPROM_ELRS_TX_P_ADDR 7
+#define EEPROM_VTX_B_ADDR 8
+#define EEPROM_VTX_CH_ADDR 9
+#define EEPROM_VTX_P_ADDR 10
+#define EEPROM_ELRS_TLM_R_ADDR 11
+#define EEPROM_MIXER_ADDR 12
+#define EEPROM_VTX_PIT_ADDR 13
+#define EEPROM_BUZZER_ADDR 14
+/*
+addresses 20-23 are used to configure HID module
+addresses above 32 are used by trims
+*/
 
 
 
@@ -141,7 +172,7 @@ const char* vtx_channels_labels[8] = {"1", "2", "3", "4", "5", "6", "7", "8"};
 uint8_t vtx_pitmode[8] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
 const char* vtx_pitmode_labels[8] = {"OFF", "ON", "AUX1", "AUX2", "AUX3", "AUX4", "AUX5", "AUX6"};
 
-int mixer_on_boot;
+//int mixer_on_boot;
 int protocol_on_boot;
 int protocol_selected;
 

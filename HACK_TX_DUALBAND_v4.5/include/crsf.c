@@ -599,6 +599,7 @@ void serialtelemetryevent_868()
             {
               LinkStatistics.downlink_Link_quality = value;
             }
+            
           }
 
         }

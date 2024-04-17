@@ -18,13 +18,12 @@
 //SFW model names to be used in school
 //#define SCHOOL
 
-/*
-code is provided as is - no warranty it will work for your use case - use at your own risk
-*/
-
 //debug
 //#define debug
 
+
+/*
+Code is provided as is - no warranty */
 #ifdef debug
 
 #define USBCON
@@ -135,7 +134,7 @@ void show_data() {
       //lcd.setCursor(11, 2); 
       lcd.print(buffer);
 
-    } else if (currentMenuPos == 22) { //telemtry screen
+    } else if (currentMenuPos == 23) { //telemtry screen
       lcd.setCursor(0, 2);
       lcd.print("RSSI:");
       lcd.print(LinkStatistics.uplink_RSSI_1);
@@ -184,7 +183,7 @@ void RX_wifi_update() {
 void vtx_band_change() {
   lcd.print(vtx_bands_labels[tempVal]);
   vtx_band = tempVal;
-  EEPROM_write(8, vtx_band);
+  EEPROM_write(EEPROM_VTX_B_ADDR, vtx_band);
   
   buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_VTX_ADMIN, 1);
    if (protocol_selected == 1) {
@@ -257,7 +256,7 @@ void vtx_channel_change() {
 
   lcd.print(vtx_channels_labels[tempVal]);
   vtx_channel = tempVal;
-  EEPROM_write(9, vtx_channel);
+  EEPROM_write(EEPROM_VTX_CH_ADDR, vtx_channel);
   
   buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_VTX_ADMIN, 1);
    if (protocol_selected == 1) {
@@ -332,7 +331,7 @@ void vtx_power_change() {
 
   lcd.print(tempVal);
   vtx_power = tempVal;
-  EEPROM_write(10, vtx_power);
+  EEPROM_write(EEPROM_VTX_P_ADDR, vtx_power);
   
   buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_VTX_ADMIN, 1);
    if (protocol_selected == 1) {
@@ -407,7 +406,7 @@ void vtx_pit_mode() {
 
   lcd.print(vtx_pitmode_labels[tempVal]);
   vtx_pit = tempVal;
-  EEPROM_write(13, vtx_pit);
+  EEPROM_write(EEPROM_VTX_PIT_ADDR, vtx_pit);
 
   buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_VTX_ADMIN, 1);
   if (protocol_selected == 1) {
@@ -481,7 +480,7 @@ void vtx_pit_mode() {
 void ELRS_Pkt_rate_change() {
 
   ELRS_Pkt_rate = tempVal;
-  EEPROM_update(6, ELRS_Pkt_rate);
+  EEPROM_update(EEPROM_ELRS_PKT_R_ADDR, ELRS_Pkt_rate);
   
   buildElrsPacket(crsfCmdPacket, ELRS_LUA_COMMAND_PACKET_RATE, elrs_tx_pkt_rate[tempVal]);
    if (protocol_selected == 1) {
@@ -500,7 +499,7 @@ void ELRS_Pkt_rate_change() {
 void ELRS_POWER() {
 
   ELRS_TX_Power = tempVal;
-  EEPROM_update(7, ELRS_TX_Power);
+  EEPROM_update(EEPROM_ELRS_TX_P_ADDR, ELRS_TX_Power);
 
   lcd.print(elrs_tx_pwr_lvl_labels[tempVal]);
   
@@ -527,7 +526,7 @@ void ELRS_POWER() {
 void ELRS_telemetry_ratio() {
 
   ELRS_Tlm_ratio = tempVal;
-  EEPROM_update(11, ELRS_Tlm_ratio);
+  EEPROM_update(EEPROM_ELRS_TLM_R_ADDR, ELRS_Tlm_ratio);
   lcd.print(elrs_telem_ratio_labels[ELRS_Tlm_ratio]);
   
   buildElrsPacket(crsfCmdPacket, 2, ELRS_Tlm_ratio);
@@ -659,7 +658,22 @@ switch(tempVal) {
     break;
   }
   usb_data = tempVal;
-  EEPROM_update(0, tempVal);
+  EEPROM_update(EEPROM_USB_DAT_ADDR, tempVal);
+
+}
+
+void BUZZER_CFG() {
+switch(tempVal) {
+  case(1):
+    lcd.print("ON");
+    break;
+  case(0):
+    lcd.print("OFF");
+    break;
+  }
+  EEPROM_update(EEPROM_BUZZER_ADDR, tempVal);
+  use_buzzer = tempVal;
+  
 
 }
 
@@ -686,7 +700,7 @@ void RC_protocol() {
     break;
   }
 
-  EEPROM_update(5, tempVal);
+  EEPROM_update(EEPROM_PROTOCOL_ADDR, tempVal);
   protocol_selected = tempVal;
 
 }
@@ -701,7 +715,7 @@ void select_mixer() {
   SerialUSB.print("mixer selected:"); SerialUSB.println(mixer_selected);
   #endif
   
-  EEPROM_update(12, tempVal);
+  EEPROM_update(EEPROM_MIXER_ADDR, tempVal);
 
   throttle_fine = EEPROM_read((32 + mixer_selected*4));
   yaw_fine = EEPROM_read((33 + mixer_selected*4));
@@ -751,12 +765,14 @@ void void_null() {
 
 void setup()  {
 
-  pinMode(reset_pin, OUTPUT);
-  digitalWrite(reset_pin, HIGH);
+  //pinMode(reset_pin, OUTPUT);
+ // digitalWrite(reset_pin, HIGH);
   pinMode(Module_power_868, OUTPUT);
   digitalWrite(Module_power_868, LOW);
   pinMode(Module_power_2400, OUTPUT);
   digitalWrite(Module_power_2400, LOW);
+ // pinMode(buzzer, OUTPUT);
+ // digitalWrite(buzzer, LOW);
   //setup two invidual serial ports for tx modules + one for HID module
   ELRS_Serial_868.begin(CRSF_baudrate); //UART1
   ELRS_Serial_2400.begin(CRSF_baudrate);  //UART2
@@ -778,25 +794,29 @@ void setup()  {
   pinMode(AUX2, INPUT);  //AUX2
   pinMode(AUX3, INPUT);  //AUX3
   pinMode(AUX4, INPUT);  //AUX4
+
+  pinMode(POT1, OUTPUT);
+  pinMode(POT2, OUTPUT);
   
   Wire.begin();
   Wire.setClock(100000);
   //showSplashScreen();
   
-  usb_data = EEPROM_read(0);   //load settings from external eeprom
+  usb_data = EEPROM_read(EEPROM_USB_DAT_ADDR);   //load settings from external eeprom
  /* throttle_fine = EEPROM_read(1);
   yaw_fine = EEPROM_read(2);
   pitch_fine = EEPROM_read(3);
   roll_fine = EEPROM_read(4); */
-  protocol_selected = EEPROM_read(5);
-  ELRS_Pkt_rate = EEPROM_read(6);
-  ELRS_TX_Power = EEPROM_read(7);
-  vtx_band = EEPROM_read(8);
-  vtx_channel = EEPROM_read(9);
-  vtx_power = EEPROM_read(10);
-  ELRS_Tlm_ratio = EEPROM_read(11);
-  mixer_selected = EEPROM_read(12);
-  vtx_pit = EEPROM_read(13);
+  protocol_selected = EEPROM_read(EEPROM_PROTOCOL_ADDR);
+  ELRS_Pkt_rate = EEPROM_read(EEPROM_ELRS_PKT_R_ADDR);
+  ELRS_TX_Power = EEPROM_read(EEPROM_ELRS_TX_P_ADDR);
+  vtx_band = EEPROM_read(EEPROM_VTX_B_ADDR);
+  vtx_channel = EEPROM_read(EEPROM_VTX_CH_ADDR);
+  vtx_power = EEPROM_read(EEPROM_VTX_P_ADDR);
+  ELRS_Tlm_ratio = EEPROM_read(EEPROM_ELRS_TLM_R_ADDR);
+  mixer_selected = EEPROM_read(EEPROM_MIXER_ADDR);
+  vtx_pit = EEPROM_read(EEPROM_VTX_PIT_ADDR);
+  use_buzzer = EEPROM_read(EEPROM_BUZZER_ADDR);
 
   throttle_fine = EEPROM_read((32 + mixer_selected*4));
   yaw_fine = EEPROM_read((33 + mixer_selected*4));
@@ -807,7 +827,7 @@ void setup()  {
   rf24_ch = EEPROM_read(HID_COMMAND_TX_CHANNEL);
   rf24_pwr_lvl = EEPROM_read(HID_COMMAND_TX_PWR);
 
-  mixer_on_boot = mixer_selected; //save values read on boot to check if user changed them during use
+  //mixer_on_boot = mixer_selected; //save values read on boot to check if user changed them during use
   protocol_on_boot = protocol_selected;
 //  protocol_selected = protocol_selected;
   
@@ -839,17 +859,26 @@ void setup()  {
   menu[18] = {"RF24 Model ID", 0, 20, rf24_model_id, RF24_model_select};
   menu[19] = {"RF24 Channel", 0, 125, rf24_ch, RF24_channel_select};
   menu[20] = {"RF24 Power", 0, 3, rf24_pwr_lvl, RF24_power_select};
+  menu[21] = {"Buzzer", 0, 1, use_buzzer, BUZZER_CFG};
 
-  menu[21] = {"EEPROM Reset", 0, 0, 0, reset_eeprom};
-  menu[22] = {"TELEMETRY", 0, 0, 0, elrs_telemetry};
+  menu[22] = {"EEPROM Reset", 0, 0, 0, reset_eeprom};
+  menu[23] = {"TELEMETRY", 0, 0, 0, elrs_telemetry};
 
   menuSize = sizeof(menu)/sizeof(STRUCT_MENUPOS);
 
   analogReadResolution(12); //set ADC to 12-bit res
   
   lcd.begin();
-  showSplashScreen();
 
+  showSplashScreen();
+  if (use_buzzer == true) {
+    buildElrsPacket(crsfCmdPacket, HID_COMMAND_BEEP, 1);
+    hid_serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);
+
+    //digitalWrite(buzzer, HIGH);
+   // delay(100);
+   // digitalWrite(buzzer, LOW);
+  }
   #ifdef debug
   SerialUSB.print("mixer selected boot:"); SerialUSB.println(mixer_selected);
   #endif
@@ -960,13 +989,28 @@ void loop() {
   } else if (protocol_selected == 2) {
     serialtelemetryevent_2400();
   }
+
+  if (use_buzzer == true && armed != digitalRead(AUX1)) {
+    armed = digitalRead(AUX1);
+    buildElrsPacket(crsfCmdPacket, HID_COMMAND_BEEP, 1);
+    hid_serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);
+
+    //digitalWrite(buzzer, HIGH);
+   // delay(100);
+   // digitalWrite(buzzer, LOW);
+  }
+  if (hid_serial.available()) {
+    hid_serial.readBytes((char*)&HID_tele_struct, HID_tele_size);
+  }
 /*
   if (currentMenuPos != 5 && mixer_selected != mixer_on_boot) { //auto reset for modes requiring reboot to apply
    digitalWrite(reset_pin, LOW);
   } */
 
   if (currentMenuPos != 6 && protocol_selected != protocol_on_boot) {
-    digitalWrite(reset_pin, LOW);
+    //digitalWrite(reset_pin, LOW);
+    buildElrsPacket(crsfCmdPacket, HID_COMMAND_RESET, 1);
+    hid_serial.write(crsfCmdPacket, CRSF_CMD_PACKET_SIZE);
   }  
 
  /* if (currentMenuPos != 5 && mixer_selected != mixer_on_boot) {

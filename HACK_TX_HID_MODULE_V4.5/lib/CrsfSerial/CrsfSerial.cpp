@@ -235,17 +235,16 @@ void CrsfSerial::packetLinkStatistics(const crsf_header_t *p)
     if (onPacketLinkStatistics)
         onPacketLinkStatistics(&_linkStatistics);
 }
-/*
-void CrsfSerial::write(uint8_t b)
-{
-    _port.write(b);
-}
 
 void CrsfSerial::write(const uint8_t *buf, size_t len)
 {
     _port.write(buf, len);
 }
-
+/*
+void CrsfSerial::write(uint8_t b)
+{
+    _port.write(b);
+}
 void CrsfSerial::queuePacket(uint8_t addr, uint8_t type, const void *payload, uint8_t len)
 {
     if (getPassthroughMode())

@@ -33,15 +33,18 @@ void RTAE1234() { //default mixer
   rcChannels[2]=roll;
   rcChannels[3]=pitch;
   rcChannels[4]=map(digitalRead(AUX1), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
+  
   rcChannels[5]=map(analogRead(AUX2), 0, 4096, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  rcChannels[6]=map(analogRead(AUX3), 0, 4096, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
+  rcChannels[6]=map(digitalRead(AUX3), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
   rcChannels[7]=map(digitalRead(AUX4), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
   rcChannels[8]=map(digitalRead(AUX5), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
   rcChannels[9]=map(digitalRead(AUX6), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
 
-  rcChannels[14]=map(digitalRead(BTN_BACK), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX); //for sim 
-  rcChannels[15]=map(digitalRead(BTN_OK), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
+  rcChannels[10]=map(analogRead(POT1), 0, 4096, RC_CHANNEL_MIN, RC_CHANNEL_MAX); //for sim 
+  rcChannels[11]=map(analogRead(POT2), 4096, 0, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
   
+  rcChannels[12]=map(digitalRead(BTN_BACK), 1, 0, RC_CHANNEL_MIN, RC_CHANNEL_MAX); //for sim 
+  rcChannels[13]=map(digitalRead(BTN_OK), 1, 0, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
 }
 
 /*
@@ -110,11 +113,18 @@ void AETR1234() { //default mixer
   rcChannels[2]=throttle;
   rcChannels[3]=yaw;
   rcChannels[4]=map(digitalRead(AUX1), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
+  
   rcChannels[5]=map(analogRead(AUX2), 0, 4096, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  rcChannels[6]=map(analogRead(AUX3), 0, 4096, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
+  rcChannels[6]=map(digitalRead(AUX3), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
   rcChannels[7]=map(digitalRead(AUX4), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
   rcChannels[8]=map(digitalRead(AUX5), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
   rcChannels[9]=map(digitalRead(AUX6), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
+
+  rcChannels[10]=map(analogRead(POT1), 0, 4096, RC_CHANNEL_MIN, RC_CHANNEL_MAX); //for sim 
+  rcChannels[11]=map(analogRead(POT2), 4096, 0, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
+  
+  rcChannels[12]=map(digitalRead(BTN_BACK), 1, 0, RC_CHANNEL_MIN, RC_CHANNEL_MAX); //for sim 
+  rcChannels[13]=map(digitalRead(BTN_OK), 1, 0, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
   
 }
 
@@ -155,12 +165,19 @@ void elevon_mixer() { //elevon/skid mixer used for flying wing without fc
   rcChannels[1] = throttle;
   rcChannels[2] = addElevonVal(roll, pitch);
   rcChannels[3] = addElevonVal(reverseElevonVal(roll), pitch);
-  rcChannels[4] = map(digitalRead(AUX1), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  rcChannels[5] = map(analogRead(AUX2), 0, 4096, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  rcChannels[6] = map(analogRead(AUX3), 0, 4096, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  rcChannels[7] = map(digitalRead(AUX4), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  rcChannels[8] = map(digitalRead(AUX5), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  rcChannels[9] = map(digitalRead(AUX6), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
+  rcChannels[4]=map(digitalRead(AUX1), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
+  
+  rcChannels[5]=map(analogRead(AUX2), 0, 4096, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
+  rcChannels[6]=map(digitalRead(AUX3), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
+  rcChannels[7]=map(digitalRead(AUX4), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
+  rcChannels[8]=map(digitalRead(AUX5), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
+  rcChannels[9]=map(digitalRead(AUX6), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
+
+  rcChannels[10]=map(analogRead(POT1), 0, 4096, RC_CHANNEL_MIN, RC_CHANNEL_MAX); //for sim 
+  rcChannels[11]=map(analogRead(POT2), 4096, 0, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
+  
+  rcChannels[12]=map(digitalRead(BTN_BACK), 1, 0, RC_CHANNEL_MIN, RC_CHANNEL_MAX); //for sim 
+  rcChannels[13]=map(digitalRead(BTN_OK), 1, 0, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
    
 }
 /*
@@ -299,14 +316,18 @@ void dirft_mixer() { //default mixer
   rcChannels[2]=roll;
   rcChannels[3]=pitch;
   rcChannels[4]=map(digitalRead(AUX1), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
+  
   rcChannels[5]=map(analogRead(AUX2), 0, 4096, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  rcChannels[6]=map(analogRead(AUX3), 0, 4096, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
+  rcChannels[6]=map(digitalRead(AUX3), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
   rcChannels[7]=map(digitalRead(AUX4), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
   rcChannels[8]=map(digitalRead(AUX5), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
   rcChannels[9]=map(digitalRead(AUX6), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
 
-  rcChannels[14]=map(digitalRead(BTN_BACK), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX); //for sim 
-  rcChannels[15]=map(digitalRead(BTN_OK), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
+  rcChannels[10]=map(analogRead(POT1), 0, 4096, RC_CHANNEL_MIN, RC_CHANNEL_MAX); //for sim 
+  rcChannels[11]=map(analogRead(POT2), 4096, 0, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
+  
+  rcChannels[12]=map(digitalRead(BTN_BACK), 1, 0, RC_CHANNEL_MIN, RC_CHANNEL_MAX); //for sim 
+  rcChannels[13]=map(digitalRead(BTN_OK), 1, 0, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
   
 }
 void (*doMixing[number_of_mixers])() { 
