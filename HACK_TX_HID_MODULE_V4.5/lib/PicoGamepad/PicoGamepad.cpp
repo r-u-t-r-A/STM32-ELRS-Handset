@@ -236,6 +236,12 @@ void PicoGamepad::SetS0(uint16_t val)
     inputArray[S0_AXIS_MSB] = MSB(val);
 }
 
+void PicoGamepad::SetS1(uint16_t val)
+{
+    inputArray[S1_AXIS_LSB] = LSB(val);
+    inputArray[S1_AXIS_MSB] = MSB(val);
+}
+
 
 void PicoGamepad::SetHat(uint8_t hatIdx, uint8_t dir)
 {

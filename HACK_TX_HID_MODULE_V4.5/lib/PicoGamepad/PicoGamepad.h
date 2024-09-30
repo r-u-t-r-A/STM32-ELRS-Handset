@@ -63,6 +63,8 @@
 // #define S0_AXIS_MSB 31
 #define S0_AXIS_LSB 32
 #define S0_AXIS_MSB 33
+#define S1_AXIS_LSB 34
+#define S1_AXIS_MSB 35
 
 #define HAT_DIR_N 0
 #define HAT_DIR_NE 1
@@ -173,7 +175,7 @@ namespace arduino
         virtual const uint8_t *configuration_desc(uint8_t index);
 
     private:
-        uint8_t inputArray[35];
+        uint8_t inputArray[37];
 
         uint8_t _configuration_descriptor[41];
         PlatformMutex _mutex;

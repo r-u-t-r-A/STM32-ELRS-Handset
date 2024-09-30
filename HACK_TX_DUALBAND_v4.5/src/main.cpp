@@ -795,6 +795,9 @@ void setup()  {
   pinMode(AUX3, INPUT);  //AUX3
   pinMode(AUX4, INPUT);  //AUX4
 
+  pinMode(AUX5, INPUT);  //AUX5
+  pinMode(AUX6, INPUT);  //AUX6
+
   pinMode(POT1, OUTPUT);
   pinMode(POT2, OUTPUT);
   

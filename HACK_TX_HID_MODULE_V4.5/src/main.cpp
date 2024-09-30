@@ -159,7 +159,7 @@ void packetChannels_gamepad()
     gamepad.SetRz(map_data);
     
     // Rx - Channel 7
-    channel_data = crsf.getChannel(7);
+    channel_data = crsf.getChannel(11);
     map_data = map(channel_data, \
       CHANNEL_7_LOW_EP,          \
       CHANNEL_7_HIGH_EP,         \
@@ -168,13 +168,21 @@ void packetChannels_gamepad()
     gamepad.SetThrottle(map_data);
 
     // Rx - Channel 8
-    channel_data = crsf.getChannel(8);
+    channel_data = crsf.getChannel(12);
     map_data = map(channel_data, \
       CHANNEL_8_LOW_EP,          \
       CHANNEL_8_HIGH_EP,         \
       JOYSTICK_LOW,              \
       JOYSTICK_HIGH);
     gamepad.SetS0(map_data);
+
+    channel_data = crsf.getChannel(8);
+    map_data = map(channel_data, \
+      CHANNEL_8_LOW_EP,          \
+      CHANNEL_8_HIGH_EP,         \
+      JOYSTICK_LOW,              \
+      JOYSTICK_HIGH);
+    gamepad.SetS1(map_data);
 
     // Ry - unused
     // gamepad.SetRy(map_data);
