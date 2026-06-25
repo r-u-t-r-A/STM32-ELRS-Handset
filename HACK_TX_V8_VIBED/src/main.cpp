@@ -912,16 +912,18 @@ void setup()  {
   SerialUSB.print("rll_fine boot:"); SerialUSB.println(roll_fine);
   SerialUSB.print("pit_fine boot:"); SerialUSB.println(pitch_fine);
   #endif
-  crsf_param_boot_ready_at = millis() + CRSF_PARAM_BOOT_DELAY_MS;
   
   if (control_protocol == HANDSET_PROTOCOL_ELRS) {
+    digitalWrite(Module_power_2400, HIGH);
     CRSF_TIM->pause();
     CRSF_TIM->setPrescaleFactor(72);
     CRSF_TIM->setOverflow(250, HERTZ_FORMAT); 
     CRSF_TIM->attachInterrupt(CRSF_SEND_2400);
     CRSF_TIM->resume();
+
     
   } else if (control_protocol == HANDSET_PROTOCOL_ESP) {
+    digitalWrite(Module_power_ESP, HIGH);
     CRSF_TIM->pause();
     CRSF_TIM->setPrescaleFactor(72);
     CRSF_TIM->setOverflow(250, HERTZ_FORMAT); 
@@ -929,7 +931,7 @@ void setup()  {
     CRSF_TIM->resume();
   }
 
-  for (int i = 0; i < CRSF_MAX_CHANNEL; i++) {
+ /* for (int i = 0; i < CRSF_MAX_CHANNEL; i++) {
 
     if (i == 1) {
       rcChannels[i] = RC_CHANNEL_MIN;
@@ -937,8 +939,9 @@ void setup()  {
       rcChannels[i] = RC_CHANNEL_MID;
     }
 
-  }
-
+  }*/
+  crsf_param_boot_ready_at = millis() + CRSF_PARAM_BOOT_DELAY_MS;
+  
   CRSF_broadcast_ping();
   dynamic_param_init(&param_manager, MAX_PARAMETERS);
 
