@@ -2,6 +2,15 @@
 //#include "PPM.c"
 #define number_of_mixers 5
 
+extern int throttle;
+extern int yaw;
+extern int throttle_fine;
+extern int yaw_fine;
+extern int roll;
+extern int pitch;
+extern int roll_fine;
+extern int pitch_fine;
+
 //const char* mixer_labels[number_of_mixers] = {"RTAE1234", "AETR1234", "servo skid", "HT on Y/E", "PPM passthrought", "PPM out", "CALIB"};
 #ifdef SCHOOL
   const char* mixer_labels[number_of_mixers] = {"RTAE1234", "AETR1234", "servo skid","drift car" ,"CALIB"};

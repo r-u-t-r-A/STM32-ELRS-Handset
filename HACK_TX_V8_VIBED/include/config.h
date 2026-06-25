@@ -3,21 +3,13 @@
 bool armed = false;
 bool use_buzzer = false;
 
-struct HID_tele {
-  uint8_t batt;
-  uint8_t status;
-  uint8_t protocol;
-} HID_tele_struct;
-
-const int HID_tele_size = sizeof(HID_tele);
-
 int control_protocol = 0;
 
 bool usb_data = 0;
 
 int mixer_selected;
 unsigned long previousMillis = 0;
-unsigned long lcdMillis = 0;
+unsigned long oledMillis = 0;
 
 //#define I2CEEPROM_ADDR 0x57
 #define I2CEEPROM_ADDR 0x50
@@ -38,7 +30,7 @@ int yaw = 512;
 int roll = 512;
 int pitch = 512;
 
-bool lcd_en = true;
+bool oled_en = true;
 bool command_to_send = false;
 
 typedef struct {
@@ -77,7 +69,7 @@ uint8_t vtx_channel;
 uint8_t vtx_band;
 uint8_t vtx_pit;
 
-#define bat_volt_div_ratio 5.848
+#define bat_volt_div_ratio 10.12
 
 float rx_voltage = 0.0;
 
@@ -151,11 +143,8 @@ addresses 20-23 are used to configure HID module
 addresses above 32 are used by trims
 */
 
-
-
 uint8_t elrs_tx_pwr_lvl[7] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06};
 const char* elrs_tx_pwr_lvl_labels[7] = {"10mW   ", "25mW   ", "50mW   ", "100mW  ", "250mW  ", "500mW  ", "1000mW "};
-
 
 //uint8_t elrs_tx_pkt_rate[15] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12, 0x13, 0x14};
 //const char* elrs_tx_pkt_rate_labels_default[15] = {"0x00", "0x01", "0x02", "0x03", "0x04", "0x05", "0x06", "0x07", "0x08", "0x09", "0x10", "0x11", "0x12", "0x13", "0x14" };
@@ -184,12 +173,6 @@ const char* vtx_channels_labels[8] = {"1", "2", "3", "4", "5", "6", "7", "8"};
 uint8_t vtx_pitmode[8] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07};
 const char* vtx_pitmode_labels[8] = {"OFF", "ON", "AUX1", "AUX2", "AUX3", "AUX4", "AUX5", "AUX6"};
 
-//int mixer_on_boot;
-int protocol_on_boot;
-int protocol_selected;
 
-int rf24_ch = 125;
-int rf24_model_id = 0;
-int rf24_pwr_lvl = 0;
 
 

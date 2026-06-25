@@ -28,7 +28,7 @@
 #define CRSF_PAYLOAD_SIZE_MAX_RC   60
 #define CRSF_PACKET_LENGTH 22
 #define CRSF_PACKET_SIZE  26
-#define CRSF_FRAME_LENGTH 24;   // length of type + payload + crc
+//#define CRSF_FRAME_LENGTH 24;   // length of type + payload + crc
 
 
 #define CRSF_CMD_PACKET_SIZE  8
@@ -45,6 +45,7 @@
 
 //#include <Arduino.h>
 #include "crsf_protocol.h"
+#include "crsf_dynamic.h"
 //#pragma once
 
 #define CRSF_MAX_PARAMS 55 // one extra required, max observed is 47 in Diversity Nano RX
@@ -64,6 +65,54 @@ typedef struct
     char name[CRSF_MAX_NAME_LEN];
 } crsf_device_t;
 
+typedef struct
+{
+    uint8_t id;
+    uint8_t type;
+    char name[32];
+    int32_t value;
+    int32_t min;
+    int32_t max;
+    char unit[16];
+    uint8_t num_options;
+    char options[8][32];
+    uint8_t hidden;
+    uint8_t parent;
+} crsf_parameter_t;
+
+typedef struct
+{
+    crsf_parameter_t params[CRSF_MAX_PARAMS];
+    uint8_t param_count;
+    uint8_t params_loaded;
+    uint8_t param_request_idx;
+    uint32_t param_request_time;
+} crsf_param_list_t;
+
+// Dynamic menu structures for UI
+typedef struct {
+    uint8_t param_id;
+    char display_name[32];
+    crsf_parameter_t *param_ptr;
+    uint8_t folder_id;
+    uint8_t is_visible;
+} handset_menu_item_t;
+
+typedef struct {
+    uint8_t folder_id;
+    char folder_name[32];
+    uint8_t item_count;
+    uint8_t first_item_idx;
+} handset_menu_folder_t;
+
+typedef struct {
+    handset_menu_item_t items[CRSF_MAX_PARAMS];
+    uint8_t item_count;
+    handset_menu_folder_t folders[16];
+    uint8_t folder_count;
+    uint8_t current_folder_id;
+} handset_menu_state_t;
+
 typedef enum
 {
     MODULE_UNKNOWN,
@@ -82,9 +131,33 @@ uint8_t protocol_module_is_elrs();
 
 extern module_type_t module_type;
 extern uint8_t device_idx; // current device index
+extern crsf_param_list_t tx_module_params;
+extern handset_menu_state_t handset_menu;
+extern dynamic_param_manager_t param_manager;
 
 extern char recv_param_buffer[];
 extern char *recv_param_ptr;
+
+#define CRSF_PARAM_BOOT_DELAY_MS 3000
+
+extern uint32_t crsf_param_boot_ready_at;
+
+static inline uint8_t crsf_param_load_active(void) {
+  return param_manager.fields_count > 0 && !param_manager.params_loaded;
+}
+
+uint8_t crsf_param_discovery_allowed(void);
+
+void CRSF_discover_parameters(uint8_t device_id);
+void crsf_rc_timer_pause(void);
+void crsf_rc_timer_resume(void);
+void CRSF_send_id(uint8_t modelId);
+void CRSF_get_elrs_info(uint8_t target);
+void parse_parameter_entry(uint8_t *buffer, uint16_t buffer_len);
+void send_parameter_value(uint8_t param_id, int32_t value, uint8_t size);
+void build_handset_menus_from_params(void);
+uint8_t get_visible_items_in_folder(uint8_t folder_id, handset_menu_item_t **out_items);
+crsf_parameter_t* get_param_at_menu_position(uint8_t menu_idx);
 
 // Basic setup
 #ifdef DEBUG
@@ -179,6 +252,8 @@ typedef struct
     uint8_t flags;
     char flag_info[CRSF_MAX_NAME_LEN];
 } elrs_info_t;
+
+extern elrs_info_t elrs_info;
 
 /// UART Handling ///
 static volatile uint8_t SerialInPacketLen; // length of the CRSF packet as measured

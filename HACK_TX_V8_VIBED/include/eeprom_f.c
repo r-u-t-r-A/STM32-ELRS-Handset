@@ -1,5 +1,5 @@
 // writes a byte of data in memory location addr
-
+#define I2CEEPROM_ADDR 0x50
 //#define debug
 void EEPROM_write(unsigned int addr, byte eeprom_data)  {
   #ifdef debug
