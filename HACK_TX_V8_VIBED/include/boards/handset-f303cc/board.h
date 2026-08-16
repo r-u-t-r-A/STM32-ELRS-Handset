@@ -4,6 +4,7 @@
 #define PIO_FRAMEWORK_ARDUINO_ENABLE_CDC
 /* --- pins --- */
 #define battery_in        PB1
+#define bat_volt_div_ratio 5.848
 #define Module_power_ESP  PB12
 #define Module_power_2400 PB8
 #define joystick_Y        PA0

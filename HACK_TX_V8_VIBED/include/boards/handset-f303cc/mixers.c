@@ -13,14 +13,8 @@ extern int pitch;
 extern int roll_fine;
 extern int pitch_fine;
 extern int rcChannels[CRSF_MAX_CHANNEL];
-//const char* mixer_labels[] = {"RTAE1234", "AETR1234", "servo skid", "HT on Y/E", "PPM passthrought", "PPM out", "CALIB"};
-#ifdef SCHOOL
-  const char* mixer_labels[] = {"RTAE1234", "AETR1234", "servo skid","drift car" ,"CALIB"};
-#endif
 
-#ifndef SCHOOL
-  const char* mixer_labels[] = {"RTAE1234", "AETR1234", "servo skid", "drift fuckup" ,"CALIB"};
-#endif
+const char* mixer_labels[] = {"RTAE1234", "AETR1234", "servo skid", "drift fuckup" ,"CALIB"};
 
 void RTAE1234() { //default mixer
 

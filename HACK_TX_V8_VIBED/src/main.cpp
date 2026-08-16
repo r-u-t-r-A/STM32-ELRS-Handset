@@ -134,7 +134,6 @@ uint8_t vtx_channel;
 uint8_t vtx_band;
 uint8_t vtx_pit;
 
-#define bat_volt_div_ratio 5.848
 
 float rx_voltage = 0.0;
 

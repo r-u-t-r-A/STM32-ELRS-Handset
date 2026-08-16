@@ -4,11 +4,12 @@
 #define PIO_FRAMEWORK_ARDUINO_ENABLE_CDC
 /* --- pins --- */
 #define battery_in PB1
+#define bat_volt_div_ratio 10.12
 #define Module_power_2400 PB9
 #define joystick_Y PA1
 #define joystick_T PA0
-#define AUX2 PB5
-#define AUX1 PB0
+#define AUX2 PA2
+#define AUX1 PA3
 #define BTN_BACK PB14
 #define BTN_NEXT PA8
 #define BTN_PREV PB15
