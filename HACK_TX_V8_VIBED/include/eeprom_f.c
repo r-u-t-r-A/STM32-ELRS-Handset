@@ -7,7 +7,9 @@ void EEPROM_write(unsigned int addr, byte eeprom_data)  {
   #endif
   Wire.beginTransmission(I2CEEPROM_ADDR);
   // set the pointer position
-  //Wire.write((int)(addr >> 8));
+  #if EEPROM_SIZE > 1
+  Wire.write((int)(addr >> 8));
+  #endif
   Wire.write((int)(addr & 0xFF));
   Wire.write(eeprom_data);
   Wire.endTransmission();
@@ -23,7 +25,9 @@ byte EEPROM_read(unsigned int addr)  {
   byte result;
   Wire.beginTransmission(I2CEEPROM_ADDR);
   // set the pointer position
-  //Wire.write((int)(addr >> 8));
+ #if EEPROM_SIZE > 1
+  Wire.write((int)(addr >> 8));
+  #endif
   Wire.write((int)(addr & 0xFF));
   Wire.endTransmission();
   Wire.requestFrom(I2CEEPROM_ADDR,1); // get the byte of data

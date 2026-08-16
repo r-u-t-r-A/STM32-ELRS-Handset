@@ -4,7 +4,12 @@
 #include <U8x8lib.h>
 #include <string.h>
 
-extern U8X8_SH1106_128X64_NONAME_HW_I2C oled;
+#ifdef BOARD_HAS_SSD1315_OLED
+    extern U8X8_SSD1315_128X64_NONAME_HW_I2C oled;
+#else
+    extern U8X8_SH1106_128X64_NONAME_HW_I2C oled;
+#endif
+
 extern int throttle_fine;
 extern int yaw_fine;
 extern int pitch_fine;

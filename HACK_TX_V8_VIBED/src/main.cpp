@@ -8,20 +8,25 @@
 #include <HardwareTimer.h>
 #include <Wire.h>
 //#include "config.h"
-#include "crsf.c"
-#include "mixers.c"
+#include "rc/crsf.c"
+#include MIXERS_FILE   /* defines doMixing, mixer_labels */
 #include "eeprom_f.c"
 //#include <U8g2lib.h>
 #include <U8x8lib.h>
-#include "crsf_dynamic.h"
-#include "crsf_debug.h"
+#include "rc/crsf_dynamic.h"
+#include "rc/crsf_debug.h"
 #include "oled_text.h"
 #include "oled_text.c"
 #include "handset_menu.h"
 #include "handset_menu.c"
 
 //U8G2_SSD1315_128X64_NONAME_1_HW_I2C oled(U8G2_R0);
-U8X8_SH1106_128X64_NONAME_HW_I2C oled(U8X8_PIN_NONE, PB6, PB7);
+#ifdef BOARD_HAS_SSD1315_OLED
+    U8X8_SSD1315_128X64_NONAME_HW_I2C oled(U8X8_PIN_NONE, PB6, PB7);
+#else
+    U8X8_SH1106_128X64_NONAME_HW_I2C oled(U8X8_PIN_NONE, PB6, PB7);
+#endif
+
 //#include "CRSF_CMD.h"
 //#include "button_handler.c"
 //#include " oled.c"
@@ -809,13 +814,13 @@ void CRSF_SEND_2400() {
   crsfPreparePacket(crsfPacket, rcChannels);
   ELRS_Serial_2400.write(crsfPacket, CRSF_PACKET_SIZE);
 }
-
+#ifdef BOARD_HAS_ESP_MODULE 
 void CRSF_SEND_ESP() {
   doMixing[mixer_selected]();
   crsfPreparePacket(crsfPacket, rcChannels);
   ESP_Serial.write(crsfPacket, CRSF_PACKET_SIZE);
 }
-
+#endif
 void crsf_rc_timer_pause(void) {
   CRSF_TIM->pause();
 }
@@ -830,33 +835,34 @@ void void_null() {
 
 void setup()  {
 
-  pinMode(Module_power_2400, OUTPUT);
-  pinMode(Module_power_ESP, OUTPUT);
-  digitalWrite(Module_power_2400, LOW);
-  digitalWrite(Module_power_ESP, LOW);
+  PIN_MODE_OUTPUT(Module_power_2400);
+  PIN_MODE_OUTPUT(Module_power_ESP);
+  PIN_WRITE(Module_power_2400, LOW);
+  PIN_WRITE(Module_power_ESP, LOW);
   
   //ELRS_Serial_2400.setTx(PA9);
   //ELRS_Serial_2400.setRx(PA10);
   ELRS_Serial_2400.begin(CRSF_baudrate);  //UART1
+#ifdef BOARD_HAS_ESP_MODULE
   ESP_Serial.begin(CRSF_baudrate);
- 
+#endif
   //debug serial over usb
   #ifdef debug
   SerialUSB.begin(115200);
   //delay(10000);
   SerialUSB.println("starting debug");
   #endif
-  pinMode(joystick_Y, INPUT);  
-  pinMode(joystick_T, INPUT);  
-  pinMode(joystick_R, INPUT);  
-  pinMode(joystick_P, INPUT);  
+  PIN_MODE_INPUT(joystick_Y);  
+  PIN_MODE_INPUT(joystick_T);  
+  PIN_MODE_INPUT(joystick_R);  
+  PIN_MODE_INPUT(joystick_P);  
   
-  pinMode(battery_in, INPUT);  //battery voltage divider
+  PIN_MODE_INPUT(battery_in);  //battery voltage divider
 
-  pinMode(AUX1, INPUT_PULLDOWN); //AUX1
-  pinMode(AUX2, INPUT_PULLDOWN);  //AUX2
-  pinMode(AUX3, INPUT_PULLDOWN); //AUX3
-  pinMode(AUX4, INPUT_PULLDOWN);  //AUX4
+  PIN_MODE_PULLDOWN(AUX1); //AUX1
+  PIN_MODE_INPUT(AUX2);  //AUX2
+  PIN_MODE_PULLDOWN(AUX3); //AUX3
+  PIN_MODE_PULLDOWN(AUX4);  //AUX4
  
   Wire.setSCL(PB6);
   Wire.setSDA(PB7);
@@ -890,10 +896,10 @@ void setup()  {
   pitch_fine = EEPROM_read((34 + mixer_selected*4));
   roll_fine = EEPROM_read((35 + mixer_selected*4));
 
-  pinMode(BTN_NEXT, INPUT_PULLUP);
-  pinMode(BTN_PREV, INPUT_PULLUP);
-  pinMode(BTN_BACK, INPUT_PULLUP);
-  pinMode(BTN_OK, INPUT_PULLUP);
+  PIN_MODE_PULLUP(BTN_NEXT);
+  PIN_MODE_PULLUP(BTN_PREV);
+  PIN_MODE_PULLUP(BTN_BACK);
+  PIN_MODE_PULLUP(BTN_OK);
   int protocol_selected = 0;
  
   analogReadResolution(12); //set ADC to 12-bit res
@@ -914,23 +920,25 @@ void setup()  {
   #endif
   
   if (control_protocol == HANDSET_PROTOCOL_ELRS) {
-    digitalWrite(Module_power_2400, HIGH);
+    PIN_WRITE(Module_power_2400, HIGH);
     CRSF_TIM->pause();
     CRSF_TIM->setPrescaleFactor(72);
     CRSF_TIM->setOverflow(250, HERTZ_FORMAT); 
     CRSF_TIM->attachInterrupt(CRSF_SEND_2400);
     CRSF_TIM->resume();
 
-    
+   
   } else if (control_protocol == HANDSET_PROTOCOL_ESP) {
-    digitalWrite(Module_power_ESP, HIGH);
+    #ifdef BOARD_HAS_ESP_MODULE 
+    PIN_WRITE(Module_power_ESP, HIGH);
     CRSF_TIM->pause();
     CRSF_TIM->setPrescaleFactor(72);
     CRSF_TIM->setOverflow(250, HERTZ_FORMAT); 
     CRSF_TIM->attachInterrupt(CRSF_SEND_ESP);
     CRSF_TIM->resume();
+     #endif
   }
-
+ 
  /* for (int i = 0; i < CRSF_MAX_CHANNEL; i++) {
 
     if (i == 1) {
