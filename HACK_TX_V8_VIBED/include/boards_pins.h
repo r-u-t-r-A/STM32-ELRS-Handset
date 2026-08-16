@@ -116,7 +116,7 @@
 #define BOARD_HAS_BUZZER       PIN_VALID(buzzer)
 #define BOARD_HAS_LEDS         PIN_VALID(led_pin)
 #define BOARD_HAS_TRAINER      PIN_VALID(Trainer_pin)
-#define BOARD_HAS_ESP_MODEULE    PIN_VALID(Module_power_ESP)
+#define BOARD_HAS_ESP_MODULE    PIN_VALID(Module_power_ESP)
 #define BOARD_HAS_RESET_PIN    PIN_VALID(reset_pin)
 
 #define BOARD_AUX_COUNT ( \

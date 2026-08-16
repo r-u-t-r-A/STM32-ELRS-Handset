@@ -22,11 +22,14 @@
 #define reset_pin         PB4
 
 /* --- peripherals --- */
+#define BOARD_HAS_ESP_SERIAL
 #define ESP_Serial        Serial1
 #define ELRS_Serial_2400  Serial2
 #define CRSF_baudrate     400000
 #define CRSF_TIM_DEF      TIM2
 #define EEPROM_SIZE 1
+#define OLED_SCL          PB6
+#define OLED_SDA          PB7
 /* --- product options --- */
 #define SCHOOL
 #define handset

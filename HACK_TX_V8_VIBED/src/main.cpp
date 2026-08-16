@@ -22,9 +22,9 @@
 
 //U8G2_SSD1315_128X64_NONAME_1_HW_I2C oled(U8G2_R0);
 #ifdef BOARD_HAS_SSD1315_OLED
-    U8X8_SSD1315_128X64_NONAME_HW_I2C oled(U8X8_PIN_NONE, PB6, PB7);
+    U8X8_SSD1315_128X64_NONAME_HW_I2C oled(U8X8_PIN_NONE, OLED_SCL, OLED_SDA);
 #else
-    U8X8_SH1106_128X64_NONAME_HW_I2C oled(U8X8_PIN_NONE, PB6, PB7);
+    U8X8_SH1106_128X64_NONAME_HW_I2C oled(U8X8_PIN_NONE, OLED_SCL, OLED_SDA);
 #endif
 
 //#include "CRSF_CMD.h"
@@ -116,7 +116,7 @@ static const char *rx_wifi_block_reason(void) {
     if (LinkStatistics.uplink_Link_quality < 5) {
         return "No link";
     }
-    if (digitalRead(AUX1)) {
+    if (pin_read_switch(AUX1)) {
         return "Disarm!";
     }
     return NULL;
@@ -552,10 +552,10 @@ void showSplashScreen() {
 }
 
 ENUM_BUTTON getButtonV6() {
-  if(!digitalRead(BTN_BACK)) return BACK;
-  if(!digitalRead(BTN_NEXT)) return NEXT;
-  if(!digitalRead(BTN_PREV)) return PREV;
-  if(!digitalRead(BTN_OK)) return OK;
+  if(pin_read_button(BTN_BACK)) return BACK;
+  if(pin_read_button(BTN_NEXT)) return NEXT;
+  if(pin_read_button(BTN_PREV)) return PREV;
+  if(pin_read_button(BTN_OK)) return OK;
 
   return NONE;
 }
@@ -672,11 +672,11 @@ void show_data() {
       oled.setCursor(0, 3);
       oled.print(chop_chars(buffer, OLED_ROW_CHARS));
 
-      String voltage = String((analogRead(battery_in) * ((3.3 / 4096) * bat_volt_div_ratio)), 2);
+      String voltage = String(board_battery_volts(bat_volt_div_ratio), 2);
       snprintf(buffer, sizeof(buffer), "Bat:%sV", voltage.c_str());
       oled.setCursor(0, 4);
       oled.print(chop_chars(buffer, OLED_ROW_CHARS));
-      
+
       if ( oled_cycle_number > 3) {
          oled.setCursor(0, 1);
         if (scroll_line_pos > 33) {
@@ -814,7 +814,7 @@ void CRSF_SEND_2400() {
   crsfPreparePacket(crsfPacket, rcChannels);
   ELRS_Serial_2400.write(crsfPacket, CRSF_PACKET_SIZE);
 }
-#ifdef BOARD_HAS_ESP_MODULE 
+#ifdef BOARD_HAS_ESP_SERIAL
 void CRSF_SEND_ESP() {
   doMixing[mixer_selected]();
   crsfPreparePacket(crsfPacket, rcChannels);
@@ -843,7 +843,7 @@ void setup()  {
   //ELRS_Serial_2400.setTx(PA9);
   //ELRS_Serial_2400.setRx(PA10);
   ELRS_Serial_2400.begin(CRSF_baudrate);  //UART1
-#ifdef BOARD_HAS_ESP_MODULE
+#ifdef BOARD_HAS_ESP_SERIAL
   ESP_Serial.begin(CRSF_baudrate);
 #endif
   //debug serial over usb
@@ -864,8 +864,8 @@ void setup()  {
   PIN_MODE_PULLDOWN(AUX3); //AUX3
   PIN_MODE_PULLDOWN(AUX4);  //AUX4
  
-  Wire.setSCL(PB6);
-  Wire.setSDA(PB7);
+  Wire.setSCL(OLED_SCL);
+  Wire.setSDA(OLED_SDA);
  
   Wire.begin();
   Wire.setClock(400000);
@@ -883,7 +883,7 @@ void setup()  {
   vtx_pit = EEPROM_read(EEPROM_VTX_PIT_ADDR);
    
   mixer_selected = EEPROM_read(EEPROM_MIXER_ADDR);
-  mixer_selected = constrain(mixer_selected, 0, 4);
+  mixer_selected = constrain(mixer_selected, 0, (int)number_of_mixers - 1);
   control_protocol = EEPROM_read(EEPROM_PROTOCOL_ADDR);
   control_protocol = constrain(control_protocol, 0, 2);
   use_buzzer = EEPROM_read(EEPROM_BUZZER_ADDR);
@@ -929,7 +929,7 @@ void setup()  {
 
    
   } else if (control_protocol == HANDSET_PROTOCOL_ESP) {
-    #ifdef BOARD_HAS_ESP_MODULE 
+    #ifdef BOARD_HAS_ESP_SERIAL
     PIN_WRITE(Module_power_ESP, HIGH);
     CRSF_TIM->pause();
     CRSF_TIM->setPrescaleFactor(72);

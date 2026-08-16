@@ -25,7 +25,7 @@ extern bool use_leds;
 
 extern const char *mixer_labels[];
 
-#define HANDSET_MIXER_COUNT 5
+#define HANDSET_MIXER_COUNT number_of_mixers
 #define HANDSET_PROTOCOL_COUNT 3
 
 static const char *protocol_labels[HANDSET_PROTOCOL_COUNT] = {

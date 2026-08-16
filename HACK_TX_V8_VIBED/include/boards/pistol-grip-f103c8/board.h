@@ -25,6 +25,8 @@
 #define CRSF_TIM_DEF TIM3
 #define BOARD_HAS_SSD1315_OLED
 #define EEPROM_SIZE 8
+#define OLED_SCL PB6
+#define OLED_SDA PB7
 /* --- product options --- */
 #define pistol_grip
 #define SCHOOL

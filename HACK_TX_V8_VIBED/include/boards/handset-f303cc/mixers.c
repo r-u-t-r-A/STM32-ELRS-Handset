@@ -1,7 +1,8 @@
 #pragma once
 //#include "PPM.c"
 #include <Arduino.h>
-#define number_of_mixers 5
+/* number_of_mixers is derived from doMixing[]/mixer_labels[] at the bottom
+ * of this file -- add or remove a mixer there and the count follows. */
 
 extern int throttle;
 extern int yaw;
@@ -12,26 +13,26 @@ extern int pitch;
 extern int roll_fine;
 extern int pitch_fine;
 extern int rcChannels[CRSF_MAX_CHANNEL];
-//const char* mixer_labels[number_of_mixers] = {"RTAE1234", "AETR1234", "servo skid", "HT on Y/E", "PPM passthrought", "PPM out", "CALIB"};
+//const char* mixer_labels[] = {"RTAE1234", "AETR1234", "servo skid", "HT on Y/E", "PPM passthrought", "PPM out", "CALIB"};
 #ifdef SCHOOL
-  const char* mixer_labels[number_of_mixers] = {"RTAE1234", "AETR1234", "servo skid","drift car" ,"CALIB"};
-#endif
-  
-#ifndef SCHOOL
-  const char* mixer_labels[number_of_mixers] = {"RTAE1234", "AETR1234", "servo skid", "drift fuckup" ,"CALIB"};
+  const char* mixer_labels[] = {"RTAE1234", "AETR1234", "servo skid","drift car" ,"CALIB"};
 #endif
 
-void RTAE1234() { //default mixer 
- 
-  throttle = map(analogRead(joystick_T), 650, 3505, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  yaw = map(analogRead(joystick_Y), 3777, 550, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  pitch = map(analogRead(joystick_P), 3705, 365, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  roll = map(analogRead(joystick_R), 580, 3545, RC_CHANNEL_MIN, RC_CHANNEL_MAX);  
+#ifndef SCHOOL
+  const char* mixer_labels[] = {"RTAE1234", "AETR1234", "servo skid", "drift fuckup" ,"CALIB"};
+#endif
+
+void RTAE1234() { //default mixer
+
+  throttle = ch_from_throttle(joystick_T, 650, 3505);
+  yaw = ch_from_axis(joystick_Y, 3777, 550);
+  pitch = ch_from_axis(joystick_P, 3705, 365);
+  roll = ch_from_axis(joystick_R, 580, 3545);
 
   throttle = throttle + (throttle_fine - 127) * 2;
   yaw = yaw + (yaw_fine - 127) * 2;
   pitch = pitch + (pitch_fine - 127) * 2;
-  roll = roll + (roll_fine - 127) * 2;  
+  roll = roll + (roll_fine - 127) * 2;
 
   throttle = constrain(throttle, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
   yaw = constrain(yaw, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
@@ -42,19 +43,19 @@ void RTAE1234() { //default mixer
   rcChannels[1]=throttle;
   rcChannels[2]=roll;
   rcChannels[3]=pitch;
-  rcChannels[4]=map(digitalRead(AUX1), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  
-  rcChannels[5]=map(digitalRead(AUX2), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  rcChannels[6]=map(digitalRead(AUX3), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  rcChannels[7]=map(digitalRead(AUX4), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
+  rcChannels[4]=ch_from_switch(AUX1);
+
+  rcChannels[5]=ch_from_switch(AUX2);
+  rcChannels[6]=ch_from_switch(AUX3);
+  rcChannels[7]=ch_from_switch(AUX4);
   //rcChannels[8]=map(digitalRead(AUX5), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
   //rcChannels[9]=map(digitalRead(AUX6), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
 
-  //rcChannels[10]=map(analogRead(POT1), 0, 4096, RC_CHANNEL_MIN, RC_CHANNEL_MAX); //for sim 
+  //rcChannels[10]=map(analogRead(POT1), 0, 4096, RC_CHANNEL_MIN, RC_CHANNEL_MAX); //for sim
   //rcChannels[11]=map(analogRead(POT2), 4096, 0, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  
-  rcChannels[10]=map(digitalRead(BTN_BACK), 1, 0, RC_CHANNEL_MIN, RC_CHANNEL_MAX); //for sim 
-  rcChannels[11]=map(digitalRead(BTN_OK), 1, 0, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
+
+  rcChannels[10]=ch_from_button(BTN_BACK); //for sim
+  rcChannels[11]=ch_from_button(BTN_OK);
 }
 
 /*
@@ -88,12 +89,12 @@ void RTAE1234() { //default mixer
   
 }*/
 
-void calib() { //default mixer 
- 
-  throttle = analogRead(joystick_T);
-  yaw = analogRead(joystick_Y);
-  pitch = analogRead(joystick_P);
-  roll = analogRead(joystick_R);  
+void calib() { //default mixer
+
+  throttle = pin_read_analog(joystick_T, 0);
+  yaw = pin_read_analog(joystick_Y, 0);
+  pitch = pin_read_analog(joystick_P, 0);
+  roll = pin_read_analog(joystick_R, 0);
 
 }
 void AETR1234() { //default mixer 
@@ -103,15 +104,15 @@ void AETR1234() { //default mixer
   pitch = map(analogRead(joystick_P), 740, 3560, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
   roll = map(analogRead(joystick_R), 3460, 920, RC_CHANNEL_MIN, RC_CHANNEL_MAX);  
 */
-  throttle = map(analogRead(joystick_T), 650, 3505, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  yaw = map(analogRead(joystick_Y), 3777, 550, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  pitch = map(analogRead(joystick_P), 3705, 365, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  roll = map(analogRead(joystick_R), 580, 3545, RC_CHANNEL_MIN, RC_CHANNEL_MAX);  
+  throttle = ch_from_throttle(joystick_T, 650, 3505);
+  yaw = ch_from_axis(joystick_Y, 3777, 550);
+  pitch = ch_from_axis(joystick_P, 3705, 365);
+  roll = ch_from_axis(joystick_R, 580, 3545);
 
   throttle = throttle + (throttle_fine - 127) * 2;
   yaw = yaw + (yaw_fine - 127) * 2;
   pitch = pitch + (pitch_fine - 127) * 2;
-  roll = roll + (roll_fine - 127) * 2;  
+  roll = roll + (roll_fine - 127) * 2;
 
   throttle = constrain(throttle, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
   yaw = constrain(yaw, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
@@ -122,20 +123,20 @@ void AETR1234() { //default mixer
   rcChannels[1]=pitch;
   rcChannels[2]=throttle;
   rcChannels[3]=yaw;
-  rcChannels[4]=map(digitalRead(AUX1), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  
-  rcChannels[5]=map(digitalRead(AUX2), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  rcChannels[6]=map(digitalRead(AUX3), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  rcChannels[7]=map(digitalRead(AUX4), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
+  rcChannels[4]=ch_from_switch(AUX1);
+
+  rcChannels[5]=ch_from_switch(AUX2);
+  rcChannels[6]=ch_from_switch(AUX3);
+  rcChannels[7]=ch_from_switch(AUX4);
   //rcChannels[8]=map(digitalRead(AUX5), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
   //rcChannels[9]=map(digitalRead(AUX6), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
 
-  //rcChannels[10]=map(analogRead(POT1), 0, 4096, RC_CHANNEL_MIN, RC_CHANNEL_MAX); //for sim 
+  //rcChannels[10]=map(analogRead(POT1), 0, 4096, RC_CHANNEL_MIN, RC_CHANNEL_MAX); //for sim
   //rcChannels[11]=map(analogRead(POT2), 4096, 0, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  
-  rcChannels[10]=map(digitalRead(BTN_BACK), 1, 0, RC_CHANNEL_MIN, RC_CHANNEL_MAX); //for sim 
-  rcChannels[11]=map(digitalRead(BTN_OK), 1, 0, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  
+
+  rcChannels[10]=ch_from_button(BTN_BACK); //for sim
+  rcChannels[11]=ch_from_button(BTN_OK);
+
 }
 
 double reverseElevonVal(double val) {
@@ -156,15 +157,15 @@ void elevon_mixer() { //elevon/skid mixer used for flying wing without fc
   pitch = map(analogRead(joystick_P), 740, 3560, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
   roll = map(analogRead(joystick_R), 3460, 920, RC_CHANNEL_MIN, RC_CHANNEL_MAX);  
 */
-  throttle = map(analogRead(joystick_T), 650, 3505, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  yaw = map(analogRead(joystick_Y), 3777, 550, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  pitch = map(analogRead(joystick_P), 3705, 365, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  roll = map(analogRead(joystick_R), 580, 3545, RC_CHANNEL_MIN, RC_CHANNEL_MAX);  
+  throttle = ch_from_throttle(joystick_T, 650, 3505);
+  yaw = ch_from_axis(joystick_Y, 3777, 550);
+  pitch = ch_from_axis(joystick_P, 3705, 365);
+  roll = ch_from_axis(joystick_R, 580, 3545);
 
   throttle = throttle + (throttle_fine - 127) * 2;
   yaw = yaw + (yaw_fine - 127) * 2;
   pitch = pitch + (pitch_fine - 127) * 2;
-  roll = roll + (roll_fine - 127) * 2;  
+  roll = roll + (roll_fine - 127) * 2;
 
   throttle = constrain(throttle, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
   yaw = constrain(yaw, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
@@ -175,20 +176,20 @@ void elevon_mixer() { //elevon/skid mixer used for flying wing without fc
   rcChannels[1] = throttle;
   rcChannels[2] = addElevonVal(roll, pitch);
   rcChannels[3] = addElevonVal(reverseElevonVal(roll), pitch);
-  rcChannels[4]=map(digitalRead(AUX1), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  
-  rcChannels[5]=map(digitalRead(AUX2), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  rcChannels[6]=map(digitalRead(AUX3), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  rcChannels[7]=map(digitalRead(AUX4), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
+  rcChannels[4]=ch_from_switch(AUX1);
+
+  rcChannels[5]=ch_from_switch(AUX2);
+  rcChannels[6]=ch_from_switch(AUX3);
+  rcChannels[7]=ch_from_switch(AUX4);
   //rcChannels[8]=map(digitalRead(AUX5), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
  // rcChannels[9]=map(digitalRead(AUX6), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
 
- // rcChannels[10]=map(analogRead(POT1), 0, 4096, RC_CHANNEL_MIN, RC_CHANNEL_MAX); //for sim 
+ // rcChannels[10]=map(analogRead(POT1), 0, 4096, RC_CHANNEL_MIN, RC_CHANNEL_MAX); //for sim
   //rcChannels[11]=map(analogRead(POT2), 4096, 0, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  
-  rcChannels[12]=map(digitalRead(BTN_BACK), 1, 0, RC_CHANNEL_MIN, RC_CHANNEL_MAX); //for sim 
-  rcChannels[13]=map(digitalRead(BTN_OK), 1, 0, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-   
+
+  rcChannels[12]=ch_from_button(BTN_BACK); //for sim
+  rcChannels[13]=ch_from_button(BTN_OK);
+
 }
 /*
 void HT_on_YE() { //mixer for head tracker input from skyzone goggles
@@ -304,17 +305,17 @@ void (*doMixing[number_of_mixers])() {
   calib
 }; */
 
-void dirft_mixer() { //default mixer 
- 
-  throttle = map(analogRead(joystick_T), 650, 3505, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  yaw = map(analogRead(joystick_Y), 3777, 550, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
+void dirft_mixer() { //default mixer
+
+  throttle = ch_from_throttle(joystick_T, 650, 3505);
+  yaw = ch_from_axis(joystick_Y, 3777, 550);
   pitch = map(analogRead(joystick_P), 3705, 365, (RC_CHANNEL_MIN + 650), (RC_CHANNEL_MAX - 700));
-  roll = map(analogRead(joystick_R), 580, 3545, RC_CHANNEL_MIN, RC_CHANNEL_MAX);  
+  roll = ch_from_axis(joystick_R, 580, 3545);
 
   throttle = throttle + (throttle_fine - 127) * 2;
   yaw = yaw + (yaw_fine - 127) * 2;
   pitch = pitch + (pitch_fine - 127) * 2;
-  roll = roll + (roll_fine - 127) * 2;  
+  roll = roll + (roll_fine - 127) * 2;
 
   throttle = constrain(throttle, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
   yaw = constrain(yaw, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
@@ -325,25 +326,29 @@ void dirft_mixer() { //default mixer
   rcChannels[1]=throttle;
   rcChannels[2]=roll;
   rcChannels[3]=pitch;
-  rcChannels[4]=map(digitalRead(AUX1), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  
-  rcChannels[5]=map(digitalRead(AUX2), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  rcChannels[6]=map(digitalRead(AUX3), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  rcChannels[7]=map(digitalRead(AUX4), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
+  rcChannels[4]=ch_from_switch(AUX1);
+
+  rcChannels[5]=ch_from_switch(AUX2);
+  rcChannels[6]=ch_from_switch(AUX3);
+  rcChannels[7]=ch_from_switch(AUX4);
   //rcChannels[8]=map(digitalRead(AUX5), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
   //rcChannels[9]=map(digitalRead(AUX6), 0, 1, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
 
-  //rcChannels[10]=map(analogRead(POT1), 0, 4096, RC_CHANNEL_MIN, RC_CHANNEL_MAX); //for sim 
+  //rcChannels[10]=map(analogRead(POT1), 0, 4096, RC_CHANNEL_MIN, RC_CHANNEL_MAX); //for sim
   //rcChannels[11]=map(analogRead(POT2), 4096, 0, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  
-  rcChannels[12]=map(digitalRead(BTN_BACK), 1, 0, RC_CHANNEL_MIN, RC_CHANNEL_MAX); //for sim 
-  rcChannels[13]=map(digitalRead(BTN_OK), 1, 0, RC_CHANNEL_MIN, RC_CHANNEL_MAX);
-  
+
+  rcChannels[12]=ch_from_button(BTN_BACK); //for sim
+  rcChannels[13]=ch_from_button(BTN_OK);
+
 }
-void (*doMixing[number_of_mixers])() { 
+void (*doMixing[])() = {
   RTAE1234,
   AETR1234,
   elevon_mixer,
   dirft_mixer,
   calib
 };
+
+#define number_of_mixers (sizeof(doMixing) / sizeof(doMixing[0]))
+static_assert(sizeof(mixer_labels) / sizeof(mixer_labels[0]) == number_of_mixers,
+              "mixer_labels and doMixing must have the same number of entries");
