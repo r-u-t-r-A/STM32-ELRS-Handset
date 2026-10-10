@@ -19,6 +19,12 @@
 #include "oled_text.c"
 #include "handset_menu.h"
 #include "handset_menu.c"
+#include "usb/hid_joystick.h"
+#include "usb/hid_joystick.c"
+
+#if defined(debug) && defined(USBD_USE_HID_COMPOSITE)
+#error "debug uses SerialUSB (CDC), which cannot be built together with the SIM HID joystick"
+#endif
 
 //U8G2_SSD1315_128X64_NONAME_1_HW_I2C oled(U8G2_R0);
 #ifdef BOARD_HAS_SSD1315_OLED
@@ -57,6 +63,7 @@ bool use_buzzer = false;
 bool use_leds = false;
 
 int control_protocol = 0;
+int boot_protocol = 0;   /* protocol active since power-on; changes need a restart */
 
 bool usb_data = 0;
 
@@ -676,6 +683,16 @@ void show_data() {
       oled.setCursor(0, 4);
       oled.print(chop_chars(buffer, OLED_ROW_CHARS));
 
+      oled.setCursor(0, 5);
+      if (control_protocol != boot_protocol) {
+        oled.print(chop_chars("Restart to apply", OLED_ROW_CHARS));
+      } else if (boot_protocol == HANDSET_PROTOCOL_SIM) {
+        oled.print(chop_chars(hid_joystick_connected() ? "USB:OK          " : "USB:--          ",
+                              OLED_ROW_CHARS));
+      } else {
+        oled.print(chop_chars("                ", OLED_ROW_CHARS));
+      }
+
       if ( oled_cycle_number > 3) {
          oled.setCursor(0, 1);
         if (scroll_line_pos > 33) {
@@ -820,6 +837,11 @@ void CRSF_SEND_ESP() {
   ESP_Serial.write(crsfPacket, CRSF_PACKET_SIZE);
 }
 #endif
+void HID_SEND() {
+  doMixing[mixer_selected]();
+  hid_joystick_send(rcChannels);
+}
+
 void crsf_rc_timer_pause(void) {
   CRSF_TIM->pause();
 }
@@ -936,7 +958,16 @@ void setup()  {
     CRSF_TIM->attachInterrupt(CRSF_SEND_ESP);
     CRSF_TIM->resume();
      #endif
+  } else if (control_protocol == HANDSET_PROTOCOL_SIM) {
+    /* both RF modules stay off; the PC sees a USB joystick */
+    hid_joystick_begin();
+    CRSF_TIM->pause();
+    CRSF_TIM->setPrescaleFactor(72);
+    CRSF_TIM->setOverflow(250, HERTZ_FORMAT);
+    CRSF_TIM->attachInterrupt(HID_SEND);
+    CRSF_TIM->resume();
   }
+  boot_protocol = control_protocol;
  
  /* for (int i = 0; i < CRSF_MAX_CHANNEL; i++) {
 

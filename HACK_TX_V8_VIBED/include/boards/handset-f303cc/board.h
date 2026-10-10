@@ -1,7 +1,5 @@
 #pragma once
 #include <Arduino.h>
-#define USBCON
-#define PIO_FRAMEWORK_ARDUINO_ENABLE_CDC
 /* --- pins --- */
 #define battery_in        PB1
 #define bat_volt_div_ratio 5.848
