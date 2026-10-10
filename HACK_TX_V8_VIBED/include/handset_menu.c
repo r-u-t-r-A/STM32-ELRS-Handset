@@ -4,7 +4,12 @@
 #include <U8x8lib.h>
 #include <string.h>
 
-extern U8X8_SH1106_128X64_NONAME_HW_I2C oled;
+#ifdef BOARD_HAS_SSD1315_OLED
+    extern U8X8_SSD1315_128X64_NONAME_HW_I2C oled;
+#else
+    extern U8X8_SH1106_128X64_NONAME_HW_I2C oled;
+#endif
+
 extern int throttle_fine;
 extern int yaw_fine;
 extern int pitch_fine;
@@ -20,7 +25,7 @@ extern bool use_leds;
 
 extern const char *mixer_labels[];
 
-#define HANDSET_MIXER_COUNT 5
+#define HANDSET_MIXER_COUNT number_of_mixers
 #define HANDSET_PROTOCOL_COUNT 3
 
 static const char *protocol_labels[HANDSET_PROTOCOL_COUNT] = {

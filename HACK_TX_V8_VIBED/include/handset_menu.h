@@ -24,6 +24,7 @@ int8_t menu_hold_repeat_tick(unsigned long now, uint8_t current_btn);
 
 #define HANDSET_PROTOCOL_ELRS 0
 #define HANDSET_PROTOCOL_ESP 1
+#define HANDSET_PROTOCOL_SIM 2
 
 #define EEPROM_PROTOCOL_ADDR 5
 #define EEPROM_MIXER_ADDR 12

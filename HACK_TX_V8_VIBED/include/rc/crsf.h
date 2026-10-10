@@ -1,5 +1,5 @@
 
- 
+#include "rc_limits.h"
  // Basic setup
 #define CRSF_MAX_CHANNEL 16
 //#define CRSF_FRAME_SIZE_MAX 64
@@ -11,9 +11,9 @@
 #define TYPE_CHANNELS                  0x16
 
 // Define RC input limite
-#define RC_CHANNEL_MIN 172
-#define RC_CHANNEL_MID 991
-#define RC_CHANNEL_MAX 1811
+//#define RC_CHANNEL_MIN 172
+//#define RC_CHANNEL_MID 991
+//#define RC_CHANNEL_MAX 1811
 
 //Define AUX channel input limite
 #define CRSF_DIGITAL_CHANNEL_MIN 172

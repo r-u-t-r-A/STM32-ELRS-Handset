@@ -65,6 +65,8 @@ Physical buttons map to `ENUM_BUTTON` in `src/main.cpp`:
 | PREV | 2 | Move cursor up / prev screen | Decrease value |
 | OK | 3 | Enter edit / open folder | Save (handset) or send to module (ELRS) |
 
+**Power-on combo (handset-f303cc only):** hold **BACK + OK** while switching on to enter the ROM USB DFU bootloader (same as BOOT0). The OLED shows "USB DFU mode"; flash with `pio run -e handset-f303cc -t upload`, or power cycle to exit. Enabled by `BOARD_ROM_DFU_ADDR` in `board.h`, see `include/rom_dfu.c`.
+
 `handset_menu.c` uses `MENU_ACT_*` with the **same numeric values** (`BACK=0`, `NEXT=1`, `PREV=2`, `OK=3`). Cast when calling handlers:
 
 ```c

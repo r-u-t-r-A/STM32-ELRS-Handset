@@ -8,20 +8,32 @@
 #include <HardwareTimer.h>
 #include <Wire.h>
 //#include "config.h"
-#include "crsf.c"
-#include "mixers.c"
+#include "rc/crsf.c"
+#include MIXERS_FILE   /* defines doMixing, mixer_labels */
 #include "eeprom_f.c"
 //#include <U8g2lib.h>
 #include <U8x8lib.h>
-#include "crsf_dynamic.h"
-#include "crsf_debug.h"
+#include "rc/crsf_dynamic.h"
+#include "rc/crsf_debug.h"
 #include "oled_text.h"
 #include "oled_text.c"
 #include "handset_menu.h"
 #include "handset_menu.c"
+#include "usb/hid_joystick.h"
+#include "usb/hid_joystick.c"
+#include "rom_dfu.c"
+
+#if defined(debug) && defined(USBD_USE_HID_COMPOSITE)
+#error "debug uses SerialUSB (CDC), which cannot be built together with the SIM HID joystick"
+#endif
 
 //U8G2_SSD1315_128X64_NONAME_1_HW_I2C oled(U8G2_R0);
-U8X8_SH1106_128X64_NONAME_HW_I2C oled(U8X8_PIN_NONE, PB6, PB7);
+#ifdef BOARD_HAS_SSD1315_OLED
+    U8X8_SSD1315_128X64_NONAME_HW_I2C oled(U8X8_PIN_NONE, OLED_SCL, OLED_SDA);
+#else
+    U8X8_SH1106_128X64_NONAME_HW_I2C oled(U8X8_PIN_NONE, OLED_SCL, OLED_SDA);
+#endif
+
 //#include "CRSF_CMD.h"
 //#include "button_handler.c"
 //#include " oled.c"
@@ -52,6 +64,7 @@ bool use_buzzer = false;
 bool use_leds = false;
 
 int control_protocol = 0;
+int boot_protocol = 0;   /* protocol active since power-on; changes need a restart */
 
 bool usb_data = 0;
 
@@ -111,7 +124,7 @@ static const char *rx_wifi_block_reason(void) {
     if (LinkStatistics.uplink_Link_quality < 5) {
         return "No link";
     }
-    if (digitalRead(AUX1)) {
+    if (pin_read_switch(AUX1)) {
         return "Disarm!";
     }
     return NULL;
@@ -129,7 +142,6 @@ uint8_t vtx_channel;
 uint8_t vtx_band;
 uint8_t vtx_pit;
 
-#define bat_volt_div_ratio 5.848
 
 float rx_voltage = 0.0;
 
@@ -547,10 +559,10 @@ void showSplashScreen() {
 }
 
 ENUM_BUTTON getButtonV6() {
-  if(!digitalRead(BTN_BACK)) return BACK;
-  if(!digitalRead(BTN_NEXT)) return NEXT;
-  if(!digitalRead(BTN_PREV)) return PREV;
-  if(!digitalRead(BTN_OK)) return OK;
+  if(pin_read_button(BTN_BACK)) return BACK;
+  if(pin_read_button(BTN_NEXT)) return NEXT;
+  if(pin_read_button(BTN_PREV)) return PREV;
+  if(pin_read_button(BTN_OK)) return OK;
 
   return NONE;
 }
@@ -622,7 +634,7 @@ void draw_dynamic_menu() {
                 strncpy(line, value_str, sizeof(line) - 1);
             } else if (field->type == CRSF_FOLDER) {
                 snprintf(line, sizeof(line), ">%s", field->name);
-            } else if (field->type == CRSF_TEXT_SELECTION) {
+            } else if (field->type <= CRSF_TEXT_SELECTION) {
                 snprintf(line, sizeof(line), "%s %s", field->name, value_str);
             } else {
                 strncpy(line, field->name, sizeof(line) - 1);
@@ -667,11 +679,21 @@ void show_data() {
       oled.setCursor(0, 3);
       oled.print(chop_chars(buffer, OLED_ROW_CHARS));
 
-      String voltage = String((analogRead(battery_in) * ((3.3 / 4096) * bat_volt_div_ratio)), 2);
+      String voltage = String(board_battery_volts(bat_volt_div_ratio), 2);
       snprintf(buffer, sizeof(buffer), "Bat:%sV", voltage.c_str());
       oled.setCursor(0, 4);
       oled.print(chop_chars(buffer, OLED_ROW_CHARS));
-      
+
+      oled.setCursor(0, 5);
+      if (control_protocol != boot_protocol) {
+        oled.print(chop_chars("Restart to apply", OLED_ROW_CHARS));
+      } else if (boot_protocol == HANDSET_PROTOCOL_SIM) {
+        oled.print(chop_chars(hid_joystick_connected() ? "USB:OK          " : "USB:--          ",
+                              OLED_ROW_CHARS));
+      } else {
+        oled.print(chop_chars("                ", OLED_ROW_CHARS));
+      }
+
       if ( oled_cycle_number > 3) {
          oled.setCursor(0, 1);
         if (scroll_line_pos > 33) {
@@ -809,11 +831,16 @@ void CRSF_SEND_2400() {
   crsfPreparePacket(crsfPacket, rcChannels);
   ELRS_Serial_2400.write(crsfPacket, CRSF_PACKET_SIZE);
 }
-
+#ifdef BOARD_HAS_ESP_SERIAL
 void CRSF_SEND_ESP() {
   doMixing[mixer_selected]();
   crsfPreparePacket(crsfPacket, rcChannels);
   ESP_Serial.write(crsfPacket, CRSF_PACKET_SIZE);
+}
+#endif
+void HID_SEND() {
+  doMixing[mixer_selected]();
+  hid_joystick_send(rcChannels);
 }
 
 void crsf_rc_timer_pause(void) {
@@ -830,36 +857,37 @@ void void_null() {
 
 void setup()  {
 
-  pinMode(Module_power_2400, OUTPUT);
-  pinMode(Module_power_ESP, OUTPUT);
-  digitalWrite(Module_power_2400, LOW);
-  digitalWrite(Module_power_ESP, LOW);
+  PIN_MODE_OUTPUT(Module_power_2400);
+  PIN_MODE_OUTPUT(Module_power_ESP);
+  PIN_WRITE(Module_power_2400, LOW);
+  PIN_WRITE(Module_power_ESP, LOW);
   
   //ELRS_Serial_2400.setTx(PA9);
   //ELRS_Serial_2400.setRx(PA10);
   ELRS_Serial_2400.begin(CRSF_baudrate);  //UART1
+#ifdef BOARD_HAS_ESP_SERIAL
   ESP_Serial.begin(CRSF_baudrate);
- 
+#endif
   //debug serial over usb
   #ifdef debug
   SerialUSB.begin(115200);
   //delay(10000);
   SerialUSB.println("starting debug");
   #endif
-  pinMode(joystick_Y, INPUT);  
-  pinMode(joystick_T, INPUT);  
-  pinMode(joystick_R, INPUT);  
-  pinMode(joystick_P, INPUT);  
+  PIN_MODE_INPUT(joystick_Y);  
+  PIN_MODE_INPUT(joystick_T);  
+  PIN_MODE_INPUT(joystick_R);  
+  PIN_MODE_INPUT(joystick_P);  
   
-  pinMode(battery_in, INPUT);  //battery voltage divider
+  PIN_MODE_INPUT(battery_in);  //battery voltage divider
 
-  pinMode(AUX1, INPUT_PULLDOWN); //AUX1
-  pinMode(AUX2, INPUT_PULLDOWN);  //AUX2
-  pinMode(AUX3, INPUT_PULLDOWN); //AUX3
-  pinMode(AUX4, INPUT_PULLDOWN);  //AUX4
+  PIN_MODE_PULLDOWN(AUX1); //AUX1
+  PIN_MODE_PULLDOWN(AUX2);  //AUX2
+  PIN_MODE_PULLDOWN(AUX3); //AUX3
+  PIN_MODE_PULLDOWN(AUX4);  //AUX4
  
-  Wire.setSCL(PB6);
-  Wire.setSDA(PB7);
+  Wire.setSCL(OLED_SCL);
+  Wire.setSDA(OLED_SDA);
  
   Wire.begin();
   Wire.setClock(400000);
@@ -877,7 +905,7 @@ void setup()  {
   vtx_pit = EEPROM_read(EEPROM_VTX_PIT_ADDR);
    
   mixer_selected = EEPROM_read(EEPROM_MIXER_ADDR);
-  mixer_selected = constrain(mixer_selected, 0, 4);
+  mixer_selected = constrain(mixer_selected, 0, (int)number_of_mixers - 1);
   control_protocol = EEPROM_read(EEPROM_PROTOCOL_ADDR);
   control_protocol = constrain(control_protocol, 0, 2);
   use_buzzer = EEPROM_read(EEPROM_BUZZER_ADDR);
@@ -890,15 +918,34 @@ void setup()  {
   pitch_fine = EEPROM_read((34 + mixer_selected*4));
   roll_fine = EEPROM_read((35 + mixer_selected*4));
 
-  pinMode(BTN_NEXT, INPUT_PULLUP);
-  pinMode(BTN_PREV, INPUT_PULLUP);
-  pinMode(BTN_BACK, INPUT_PULLUP);
-  pinMode(BTN_OK, INPUT_PULLUP);
+  PIN_MODE_PULLUP(BTN_NEXT);
+  PIN_MODE_PULLUP(BTN_PREV);
+  PIN_MODE_PULLUP(BTN_BACK);
+  PIN_MODE_PULLUP(BTN_OK);
   int protocol_selected = 0;
  
   analogReadResolution(12); //set ADC to 12-bit res
   
   oled.setFont(u8x8_font_5x7_f);
+
+#ifdef BOARD_ROM_DFU_ADDR
+  /* BACK + OK held at power-on: reboot into the ROM USB DFU bootloader.
+   * The OLED keeps this text while the ROM runs. Wait for the pull-ups
+   * to charge any debounce caps so released buttons read high. */
+  delay(20);
+  if (pin_read_button(BTN_BACK) && pin_read_button(BTN_OK)) {
+    oled.clearDisplay();
+    oled.setCursor(0, 0);
+    oled.print(chop_chars("USB DFU mode", OLED_ROW_CHARS));
+    oled.setCursor(0, 2);
+    oled.print(chop_chars("Flash firmware", OLED_ROW_CHARS));
+    oled.setCursor(0, 3);
+    oled.print(chop_chars("or power cycle", OLED_ROW_CHARS));
+    oled.setCursor(0, 4);
+    oled.print(chop_chars("to exit", OLED_ROW_CHARS));
+    rom_dfu_jump();
+  }
+#endif
 
   showSplashScreen();
   
@@ -914,23 +961,34 @@ void setup()  {
   #endif
   
   if (control_protocol == HANDSET_PROTOCOL_ELRS) {
-    digitalWrite(Module_power_2400, HIGH);
+    PIN_WRITE(Module_power_2400, HIGH);
     CRSF_TIM->pause();
     CRSF_TIM->setPrescaleFactor(72);
     CRSF_TIM->setOverflow(250, HERTZ_FORMAT); 
     CRSF_TIM->attachInterrupt(CRSF_SEND_2400);
     CRSF_TIM->resume();
 
-    
+   
   } else if (control_protocol == HANDSET_PROTOCOL_ESP) {
-    digitalWrite(Module_power_ESP, HIGH);
+    #ifdef BOARD_HAS_ESP_SERIAL
+    PIN_WRITE(Module_power_ESP, HIGH);
     CRSF_TIM->pause();
     CRSF_TIM->setPrescaleFactor(72);
     CRSF_TIM->setOverflow(250, HERTZ_FORMAT); 
     CRSF_TIM->attachInterrupt(CRSF_SEND_ESP);
     CRSF_TIM->resume();
+     #endif
+  } else if (control_protocol == HANDSET_PROTOCOL_SIM) {
+    /* both RF modules stay off; the PC sees a USB joystick */
+    hid_joystick_begin();
+    CRSF_TIM->pause();
+    CRSF_TIM->setPrescaleFactor(72);
+    CRSF_TIM->setOverflow(250, HERTZ_FORMAT);
+    CRSF_TIM->attachInterrupt(HID_SEND);
+    CRSF_TIM->resume();
   }
-
+  boot_protocol = control_protocol;
+ 
  /* for (int i = 0; i < CRSF_MAX_CHANNEL; i++) {
 
     if (i == 1) {
