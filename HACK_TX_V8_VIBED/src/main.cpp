@@ -626,7 +626,7 @@ void draw_dynamic_menu() {
                 strncpy(line, value_str, sizeof(line) - 1);
             } else if (field->type == CRSF_FOLDER) {
                 snprintf(line, sizeof(line), ">%s", field->name);
-            } else if (field->type == CRSF_TEXT_SELECTION) {
+            } else if (field->type <= CRSF_TEXT_SELECTION) {
                 snprintf(line, sizeof(line), "%s %s", field->name, value_str);
             } else {
                 strncpy(line, field->name, sizeof(line) - 1);
