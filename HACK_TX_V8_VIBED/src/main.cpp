@@ -882,7 +882,7 @@ void setup()  {
   PIN_MODE_INPUT(battery_in);  //battery voltage divider
 
   PIN_MODE_PULLDOWN(AUX1); //AUX1
-  PIN_MODE_INPUT(AUX2);  //AUX2
+  PIN_MODE_PULLDOWN(AUX2);  //AUX2
   PIN_MODE_PULLDOWN(AUX3); //AUX3
   PIN_MODE_PULLDOWN(AUX4);  //AUX4
  
