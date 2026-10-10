@@ -21,6 +21,7 @@
 #include "handset_menu.c"
 #include "usb/hid_joystick.h"
 #include "usb/hid_joystick.c"
+#include "rom_dfu.c"
 
 #if defined(debug) && defined(USBD_USE_HID_COMPOSITE)
 #error "debug uses SerialUSB (CDC), which cannot be built together with the SIM HID joystick"
@@ -926,6 +927,25 @@ void setup()  {
   analogReadResolution(12); //set ADC to 12-bit res
   
   oled.setFont(u8x8_font_5x7_f);
+
+#ifdef BOARD_ROM_DFU_ADDR
+  /* BACK + OK held at power-on: reboot into the ROM USB DFU bootloader.
+   * The OLED keeps this text while the ROM runs. Wait for the pull-ups
+   * to charge any debounce caps so released buttons read high. */
+  delay(20);
+  if (pin_read_button(BTN_BACK) && pin_read_button(BTN_OK)) {
+    oled.clearDisplay();
+    oled.setCursor(0, 0);
+    oled.print(chop_chars("USB DFU mode", OLED_ROW_CHARS));
+    oled.setCursor(0, 2);
+    oled.print(chop_chars("Flash firmware", OLED_ROW_CHARS));
+    oled.setCursor(0, 3);
+    oled.print(chop_chars("or power cycle", OLED_ROW_CHARS));
+    oled.setCursor(0, 4);
+    oled.print(chop_chars("to exit", OLED_ROW_CHARS));
+    rom_dfu_jump();
+  }
+#endif
 
   showSplashScreen();
   

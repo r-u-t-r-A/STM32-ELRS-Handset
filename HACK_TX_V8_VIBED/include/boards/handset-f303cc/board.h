@@ -29,6 +29,9 @@
 #define EEPROM_SIZE 1
 #define OLED_SCL          PB6
 #define OLED_SDA          PB7
+/* ROM bootloader with USB DFU (AN2606, STM32F303xB/C system memory).
+ * Hold BACK + OK at power-on to enter it. */
+#define BOARD_ROM_DFU_ADDR 0x1FFFD800UL
 /* --- product options --- */
 #define SCHOOL
 #define handset
