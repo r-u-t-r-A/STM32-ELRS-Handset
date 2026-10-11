@@ -57,7 +57,7 @@ Code is provided as is - no warranty */
 
 //Inputs outputs
 
-HardwareSerial Serial2(USART2);
+Uart Serial2(USART2);
 
 bool armed = false;
 bool use_buzzer = false;
